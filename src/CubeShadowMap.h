@@ -21,7 +21,7 @@ class CubeShadowMap
     //static const int X_POS = 0;
     
 public:
-    static enum
+    enum
     {
         X_FACE_POS,
         X_FACE_NEG,
@@ -29,7 +29,7 @@ public:
         Y_FACE_NEG,
         Z_FACE_POS,
         Z_FACE_NEG
-    } CUBE_FACES;
+    };
     
 	unsigned int textureObject;
 public:
