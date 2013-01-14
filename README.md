@@ -1,9 +1,10 @@
 What is this?
 A Cinder application that utilizes a deferred rendering engine to render lights and SSAO. There is also point-light shadow-mapping (heavy GPU cost though)
 
-TODO: lots of optimization to do here yet.
-TODO: Anti-aliasing ... jaggies, jaggies everywhere
-TODO: Better quality shadow-mapping
+TODO: <br />
+- Lots of optimization to do here yet. <br/>
+- Anti-aliasing ... jaggies, jaggies everywhere </br>
+- Better quality shadow-mapping <br />
 
 !!!!! If your computer is slow turn off the shadow-mapping by setting last parameter of Light_PS to false (not true)
 Main reason this will be slow will be GPU pipes and RAM as deferred rendering + shadow-mapping uses a huge amount if VRAM (one of its disadvantages)
