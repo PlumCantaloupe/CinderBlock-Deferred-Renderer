@@ -95,7 +95,7 @@ public:
         //format.setDepthInternalFormat( GL_DEPTH_COMPONENT32 );
         format.setColorInternalFormat( GL_RGBA16F_ARB );
         //format.setSamples( 4 ); // enable 4x antialiasing
-        mShadowsFbo	= gl::Fbo( FBO_RESOLUTION, FBO_RESOLUTION, format );
+        mShadowsFbo	= gl::Fbo( SHADOW_MAP_RESOLUTION, SHADOW_MAP_RESOLUTION, format );
     }
     
 	void setPos(Vec3f p)
@@ -331,26 +331,20 @@ class DeferredRenderer
         
         //render all shadow layers to one FBO
         mAllShadowsFBO.bindFramebuffer();
+        gl::setViewport( mAllShadowsFBO.getBounds() );
+        gl::setMatricesWindow( (float)mAllShadowsFBO.getWidth(), (float)mAllShadowsFBO.getHeight() ); //want textures to fill FBO
         glClearColor( 0.5f, 0.5f, 0.5f, 0.0 );
         glClearDepth(1.0f);
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         gl::enableAlphaBlending();
-        
-        //    mCubeLights.at(1)->mShadowsFbo.getTexture().bind();
-        //    gl::drawSolidRect( Rectf( 0, getWindowHeight(), getWindowWidth(), 0) );
-        //    mCubeLights.at(1)->mShadowsFbo.getTexture().unbind();
         
         for(vector<Light_PS*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube)
         {
             if ( !(*currCube)->doesCastShadows() )
                 continue;
             
-            gl::setViewport( (*currCube)->mShadowsFbo.getBounds() );
-            //gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
-            gl::setMatricesWindow( (float)(*currCube)->mShadowsFbo.getWidth(), (float)(*currCube)->mShadowsFbo.getHeight() ); //want textures to fill screen
-            
             (*currCube)->mShadowsFbo.getTexture().bind();
-            gl::drawSolidRect( Rectf( 0, (float)(*currCube)->mShadowsFbo.getHeight(), (float)(*currCube)->mShadowsFbo.getWidth(), 0) ); //this is different as we are not using shaders to color these quads (need to fit viewport)
+            gl::drawSolidRect( Rectf( 0, (float)mAllShadowsFBO.getHeight(), (float)mAllShadowsFBO.getWidth(), 0) ); //this is different as we are not using shaders to color these quads (need to fit viewport)
             (*currCube)->mShadowsFbo.getTexture().unbind();
         }
         gl::disableAlphaBlending();
@@ -724,9 +718,7 @@ class DeferredRenderer
         //format.setSamples( 4 ); // enable 4x antialiasing
         
         //init screen space render
-        //x2 so anti-aliasing can be automatically done when scaling down texture to window size (deferred rendering doesn't leave many options for anti-aliasing ...
-        
-        mDeferredFBO	= gl::Fbo( FBO_RESOLUTION * 2.0f, FBO_RESOLUTION * 2.0f, mtRFBO );
+        mDeferredFBO	= gl::Fbo( FBO_RESOLUTION, FBO_RESOLUTION, mtRFBO );
         mLightGlowFBO   = gl::Fbo( FBO_RESOLUTION, FBO_RESOLUTION, format );
         mPingPongBlurH	= gl::Fbo( FBO_RESOLUTION, FBO_RESOLUTION, format );
         mPingPongBlurV	= gl::Fbo( FBO_RESOLUTION, FBO_RESOLUTION, format );
