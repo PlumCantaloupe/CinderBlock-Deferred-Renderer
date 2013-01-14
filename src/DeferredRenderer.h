@@ -27,9 +27,9 @@ using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-static const float	FBO_RESOLUTION = 1024;
-static const float  LIGHT_CUTOFF = 0.01;   //light intensity cutoff point
-static const float  LIGHT_BRIGHTNESS = 40;  //brightness of lights
+static const Vec2i	FBO_RESOLUTION(1280, 720);  //using window dimensions
+static const float  LIGHT_CUTOFF = 0.01;        //light intensity cutoff point
+static const float  LIGHT_BRIGHTNESS = 40;      //brightness of lights
 static const int	SHADOW_MAP_RESOLUTION = 512;
 
 enum
@@ -68,7 +68,7 @@ public:
         cubeSize = 2.0f;
         
         //set up fake "light" to grab matrix calculations from 
-        mShadowCam.setPerspective( 90.0f, 1.0f, 1.0f, 40.0f );
+        mShadowCam.setPerspective( 90.0f, 1.0f, 1.0f, 100.0f );
         mShadowCam.lookAt( p, Vec3f( p.x, 0.0f, p.z ) );
         
         mCastShadows = castsShadows;
@@ -259,7 +259,6 @@ class DeferredRenderer
                 glLoadMatrixf(mLightFaceViewMatrices[i]);
                 glMultMatrixf((*currCube)->mShadowCam.getModelViewMatrix());
                 
-//                drawShadowCasters();
                 if (fRenderShadowCastersFunc) fRenderShadowCastersFunc();
             }
             
@@ -284,46 +283,24 @@ class DeferredRenderer
             glReadBuffer(GL_BACK);
             gl::setViewport( (*currCube)->mShadowsFbo.getBounds() );
             
-            
             glCullFace(GL_BACK); //don't need what we won't see
             
             gl::setMatrices( mMayaCam->getCamera() );
             
-            //gl::setMatricesWindow( (float)(*currCube)->mShadowsFbo.getWidth(), (float)(*currCube)->mShadowsFbo.getHeight() );
-            //        gl::setViewport( (*currCube)->mShadowsFbo.getBounds() );
-            //        glClearColor( 0.5f, 0.5f, 0.5f, 1 );
-            //        glClearDepth(1.0f);
-            //        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-            //
-            //        glEnable(GL_TEXTURE_CUBE_MAP);
-            
             mCubeShadowShader.bind();
             (*currCube)->mShadowMap.bind(0); //the magic texture
             mCubeShadowShader.uniform("shadow", 0);
-            //
-            //        mDeferredFBO.getTexture(2).bind(1); //bind position, normal and color textures from deferred shading pass
-            //        mLightShader.uniform("positionMap", 1);
-            //        mDeferredFBO.getTexture(1).bind(2); //bind normal tex
-            //        mLightShader.uniform("normalMap", 2);
-            //        mDeferredFBO.getTexture(0).bind(3); //bind color tex
-            //        mLightShader.uniform("colorMap", 3);
-            //
+
             mCubeShadowShader.uniform("light_position", mMayaCam->getCamera().getModelViewMatrix().transformPointAffine( (*currCube)->mShadowCam.getEyePoint() )); //conversion from world-space to camera-space (required here)
             mCubeShadowShader.uniform("camera_view_matrix_inv", mMayaCam->getCamera().getInverseModelViewMatrix());
             mCubeShadowShader.uniform("light_view_matrix", (*currCube)->mShadowCam.getModelViewMatrix());
             mCubeShadowShader.uniform("light_projection_matrix", (*currCube)->mShadowCam.getProjectionMatrix());
             
             drawScene();
-            //fRenderNotShadowCastersFunc();
-            
-            //        drawShadowCasters();
-            //        drawPlane();
             
             (*currCube)->mShadowMap.unbind();
             glDisable(GL_TEXTURE_CUBE_MAP);
-            //        mDeferredFBO.getTexture(2).unbind(1); //bind position, normal and color textures from deferred shading pass
-            //        mDeferredFBO.getTexture(1).unbind(2); //bind normal tex
-            //        mDeferredFBO.getTexture(0).unbind(3); //bind color tex
+
             mCubeShadowShader.unbind();
             
             (*currCube)->mShadowsFbo.unbindFramebuffer();
@@ -720,23 +697,23 @@ class DeferredRenderer
         //this FBO will capture normals, depth, and base diffuse in one render pass (as opposed to three)
         gl::Fbo::Format mtRFBO;
         mtRFBO.enableDepthBuffer();
-        mtRFBO.setDepthInternalFormat( GL_DEPTH_COMPONENT32 ); //want fbo to have precision depth map as well
+        mtRFBO.setDepthInternalFormat( GL_DEPTH_COMPONENT16 ); //want fbo to have precision depth map as well
         mtRFBO.setColorInternalFormat( GL_RGBA16F_ARB );
         mtRFBO.enableColorBuffer( true, 4 ); // create an FBO with four color attachments (basic diffuse, normal/depth view, attribute view, and position view)
         //mtRFBO.setSamples( 4 ); // uncomment this to enable 4x antialiasing
         
         gl::Fbo::Format format;
         //format.setDepthInternalFormat( GL_DEPTH_COMPONENT32 );
-        format.setColorInternalFormat( GL_RGBA16F_ARB );
+        //format.setColorInternalFormat( GL_RGBA16F_ARB );
         //format.setSamples( 4 ); // enable 4x antialiasing
         
         //init screen space render
-        mDeferredFBO	= gl::Fbo( FBO_RESOLUTION, FBO_RESOLUTION, mtRFBO );
-        mLightGlowFBO   = gl::Fbo( FBO_RESOLUTION, FBO_RESOLUTION, format );
-        mPingPongBlurH	= gl::Fbo( FBO_RESOLUTION, FBO_RESOLUTION, format );
-        mPingPongBlurV	= gl::Fbo( FBO_RESOLUTION, FBO_RESOLUTION, format );
-        mSSAOMap		= gl::Fbo( FBO_RESOLUTION, FBO_RESOLUTION, format );
-        mAllShadowsFBO  = gl::Fbo( FBO_RESOLUTION, FBO_RESOLUTION, format );
+        mDeferredFBO	= gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, mtRFBO );
+        mLightGlowFBO   = gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
+        mPingPongBlurH	= gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
+        mPingPongBlurV	= gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
+        mSSAOMap		= gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
+        mAllShadowsFBO  = gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
         
         
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
