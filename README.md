@@ -13,12 +13,12 @@ Tips to get better framerates:
  - adjust ap window size
  - go to initFBO's and lower resolution of maps
  - turn off number shadow-mapped lights by setting last parameter of LIGHT_PS constructor to false
- - Tested on Macbook Pro 2010 Mountain Lion ~10fps
+ - Tested on Macbook Pro 2010 Mountain Lion ~18-10fps
  - Tested on HP620 Windows 7 ~60-70 fps
 
 Controls
-keys 1-8 toggle through deferred layers (depth, colour, normal, shadows etc.)
-key 9 shows final composed scene
+keys 0-9 toggle through deferred layers (depth, colour, normal, shadows etc.)
+key 0 shows final composed scene
 Using MayaCam so use alt and mouse buttons to move camera
 can move a selected light with arrows keys (and shift and arrow keys for up and down movement)
 switch between "selected" lights by using - and + (will update index number in params with a delay)
