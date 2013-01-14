@@ -1,6 +1,7 @@
 build
 ipch
 *.sdf
+*.xcworkspace
 
 # Compiled source #
 ###################
