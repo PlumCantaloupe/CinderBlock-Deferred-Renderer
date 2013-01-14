@@ -198,32 +198,35 @@ void CinderDeferredRenderingApp::keyDown( KeyEvent event )
 	switch ( event.getCode() ) 
 	{
         //switch between render views
+		case KeyEvent::KEY_0:
+			RENDER_MODE = SHOW_FINAL_VIEW;
+			break;
 		case KeyEvent::KEY_1:
-			RENDER_MODE = 0;
+			RENDER_MODE = SHOW_DIFFUSE_VIEW;
 			break;
 		case KeyEvent::KEY_2:
-			RENDER_MODE = 1;
+			RENDER_MODE = SHOW_NORMALMAP_VIEW;
 			break;
 		case KeyEvent::KEY_3:
-			RENDER_MODE = 2;
+			RENDER_MODE = SHOW_DEPTH_VIEW;
 			break;
-		case KeyEvent::KEY_4:
-			RENDER_MODE = 3;
+        case KeyEvent::KEY_4:
+			RENDER_MODE = SHOW_POSITION_VIEW;
 			break;
         case KeyEvent::KEY_5:
-			RENDER_MODE = 4;
+			RENDER_MODE = SHOW_ATTRIBUTE_VIEW;
 			break;
         case KeyEvent::KEY_6:
-			RENDER_MODE = 5;
+			RENDER_MODE = SHOW_SSAO_VIEW;
 			break;
         case KeyEvent::KEY_7:
-			RENDER_MODE = 6;
+			RENDER_MODE = SHOW_SSAO_BLURRED_VIEW;
 			break;
         case KeyEvent::KEY_8:
-			RENDER_MODE = 7;
-			break;
+			RENDER_MODE = SHOW_LIGHT_VIEW;
+            break;
         case KeyEvent::KEY_9:
-			RENDER_MODE = 8;
+			RENDER_MODE = SHOW_SHADOWS_VIEW;
 			break;
             
         //change which cube you want to control

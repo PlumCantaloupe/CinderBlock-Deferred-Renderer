@@ -34,15 +34,16 @@ static const int	SHADOW_MAP_RESOLUTION = 512;
 
 enum
 {
+    SHOW_FINAL_VIEW,
 	SHOW_DIFFUSE_VIEW,
     SHOW_NORMALMAP_VIEW,
     SHOW_DEPTH_VIEW,
     SHOW_POSITION_VIEW,
     SHOW_ATTRIBUTE_VIEW,
 	SHOW_SSAO_VIEW,
+    SHOW_SSAO_BLURRED_VIEW,
     SHOW_LIGHT_VIEW,
-    SHOW_SHADOWS_VIEW,
-	SHOW_FINAL_VIEW
+    SHOW_SHADOWS_VIEW
 };
 
 //Light Cube Class
@@ -471,6 +472,7 @@ class DeferredRenderer
         mSSAOMap.getTexture().bind(0);
         mHBlurShader.bind();
         mHBlurShader.uniform("RTScene", 0);
+        mHBlurShader.uniform("blurStep", 1.0f/mPingPongBlurH.getWidth()); //so that every "blur step" will equal one pixel width of this FBO
         gl::drawSolidRect( Rectf( 0, 0, getWindowWidth(), getWindowHeight()) );
         mHBlurShader.unbind();
         mSSAOMap.getTexture().unbind(0);
@@ -488,6 +490,7 @@ class DeferredRenderer
         mPingPongBlurH.getTexture().bind(0);
         mHBlurShader.bind();
         mHBlurShader.uniform("RTBlurH", 0);
+        mHBlurShader.uniform("blurStep", 1.0f/mPingPongBlurH.getHeight()); //so that every "blur step" will equal one pixel height of this FBO
         gl::drawSolidRect( Rectf( 0, 0, getWindowWidth(), getWindowHeight()) );
         mHBlurShader.unbind();
         mPingPongBlurH.getTexture().unbind(0);
@@ -506,6 +509,26 @@ class DeferredRenderer
         
         switch (renderType)
         {
+            case SHOW_FINAL_VIEW:
+            {
+                pingPongBlur();
+                
+                gl::setViewport( getWindowBounds() );
+                gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
+                mPingPongBlurV.getTexture().bind(0);
+                mAllShadowsFBO.getTexture().bind(1);
+                mLightGlowFBO.getTexture().bind(2);
+                mBasicBlender.bind();
+                mBasicBlender.uniform("ssaoTex", 0 );
+                mBasicBlender.uniform("shadowsTex", 1 );
+                mBasicBlender.uniform("baseTex", 2 );
+                gl::drawSolidRect( Rectf( 0, getWindowHeight(), getWindowWidth(), 0) );
+                mBasicBlender.unbind();
+                mLightGlowFBO.getTexture().bind(2);
+                mAllShadowsFBO.getTexture().bind(1);
+                mPingPongBlurV.getTexture().unbind(0);
+            }
+                break;
             case SHOW_DIFFUSE_VIEW:
             {
                 gl::setViewport( getWindowBounds() );
@@ -557,7 +580,6 @@ class DeferredRenderer
                 mDeferredFBO.getTexture(1).unbind(0);
             }
                 break;
-                
             case SHOW_SSAO_VIEW:
             {
                 gl::setViewport( getWindowBounds() );
@@ -570,6 +592,17 @@ class DeferredRenderer
                 gl::drawSolidRect( Rectf( 0, getWindowHeight(), getWindowWidth(), 0) );
                 mBasicBlender.unbind();
                 mSSAOMap.getTexture().unbind(0);
+            }
+                break;
+            case SHOW_SSAO_BLURRED_VIEW:
+            {
+                pingPongBlur();
+                
+                gl::setViewport( getWindowBounds() );
+                gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
+                mPingPongBlurV.getTexture().bind(0);
+                gl::drawSolidRect( Rectf( 0, getWindowHeight(), getWindowWidth(), 0) );
+                mPingPongBlurV.getTexture().unbind(0);
             }
                 break;
             case SHOW_LIGHT_VIEW:
@@ -588,26 +621,6 @@ class DeferredRenderer
                 mAllShadowsFBO.getTexture().bind(0);
                 gl::drawSolidRect( Rectf( 0, getWindowHeight(), getWindowWidth(), 0) );
                 mAllShadowsFBO.getTexture().unbind(0);
-            }
-                break;
-            case SHOW_FINAL_VIEW:
-            {
-                pingPongBlur();
-                
-                gl::setViewport( getWindowBounds() );
-                gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
-                mPingPongBlurV.getTexture().bind(0);
-                mAllShadowsFBO.getTexture().bind(1);
-                mLightGlowFBO.getTexture().bind(2);
-                mBasicBlender.bind();
-                mBasicBlender.uniform("ssaoTex", 0 );
-                mBasicBlender.uniform("shadowsTex", 1 );
-                mBasicBlender.uniform("baseTex", 2 );
-                gl::drawSolidRect( Rectf( 0, getWindowHeight(), getWindowWidth(), 0) );
-                mBasicBlender.unbind();
-                mLightGlowFBO.getTexture().bind(2);
-                mAllShadowsFBO.getTexture().bind(1);
-                mPingPongBlurV.getTexture().unbind(0);
             }
                 break;
         }
