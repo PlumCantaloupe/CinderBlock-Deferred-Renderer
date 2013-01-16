@@ -1,6 +1,8 @@
 What is this?
 A Cinder application that utilizes a deferred rendering engine to render lights and SSAO. There is also point-light shadow-mapping (heavy GPU cost though)
 
+<img src="http://farm9.staticflickr.com/8354/8385916971_d8eb4e7dd8_z.jpg" />
+
 TODO: <br />
 - Lots of optimization to do here yet. <br/>
 - Anti-aliasing ... jaggies, jaggies everywhere </br>
