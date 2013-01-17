@@ -13,7 +13,7 @@
 // - adjust ap window size
 // - go to initFBO's and lower resolution of maps
 // - turn off number shadow-mapped lights by setting last parameter of LIGHT_PS constructor to false
-// - Tested on Macbook Pro 2010 Mountain Lion ~10fps
+// - Tested on Macbook Pro 2010 Mountain Lion ~20fps
 // - Tested on HP620 Windows 7 ~60-70 fps
 
 //Controls
@@ -110,7 +110,7 @@ void CinderDeferredRenderingApp::prepareSettings( Settings *settings )
 
 void CinderDeferredRenderingApp::setup()
 {
-	gl::disableVerticalSync();
+	gl::disableVerticalSync(); //so I can get a true representation of FPS (if higher than 60 anyhow :/)
 
 	RENDER_MODE = SHOW_FINAL_VIEW;
     
