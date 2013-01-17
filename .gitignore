@@ -1,7 +1,9 @@
-build
+build/
+Debug/
 ipch
 *.sdf
 *.xcworkspace
+*.xcuserstate/
 
 # Compiled source #
 ###################
