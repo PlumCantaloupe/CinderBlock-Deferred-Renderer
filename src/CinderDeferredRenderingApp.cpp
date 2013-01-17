@@ -58,6 +58,7 @@ static const int    NUM_LIGHTS = 6;        //number of lights
 
 class CinderDeferredRenderingApp : public AppBasic 
 {
+    
 public:
     CinderDeferredRenderingApp();
     virtual ~CinderDeferredRenderingApp();
@@ -71,11 +72,10 @@ public:
 	void mouseDrag( MouseEvent event );
     void keyDown( app::KeyEvent event );
     
-    void drawShadowCasters();
-    void drawPlane();
+    void drawShadowCasters() const;
+    void drawPlane() const;
     
 protected:
-	
     int RENDER_MODE;
 	
     //debug
@@ -92,7 +92,6 @@ protected:
 
 
 CinderDeferredRenderingApp::CinderDeferredRenderingApp(){}
-
 CinderDeferredRenderingApp::~CinderDeferredRenderingApp(){}
 
 #pragma mark - lifecycle functions
@@ -199,51 +198,47 @@ void CinderDeferredRenderingApp::keyDown( KeyEvent event )
 	{
         //switch between render views
 		case KeyEvent::KEY_0:
-			RENDER_MODE = SHOW_FINAL_VIEW;
+        {RENDER_MODE = SHOW_FINAL_VIEW;}
 			break;
 		case KeyEvent::KEY_1:
-			RENDER_MODE = SHOW_DIFFUSE_VIEW;
+        {RENDER_MODE = SHOW_DIFFUSE_VIEW;}
 			break;
 		case KeyEvent::KEY_2:
-			RENDER_MODE = SHOW_NORMALMAP_VIEW;
+        {RENDER_MODE = SHOW_NORMALMAP_VIEW;}
 			break;
 		case KeyEvent::KEY_3:
-			RENDER_MODE = SHOW_DEPTH_VIEW;
+        {RENDER_MODE = SHOW_DEPTH_VIEW;}
 			break;
         case KeyEvent::KEY_4:
-			RENDER_MODE = SHOW_POSITION_VIEW;
+        {RENDER_MODE = SHOW_POSITION_VIEW;}
 			break;
         case KeyEvent::KEY_5:
-			RENDER_MODE = SHOW_ATTRIBUTE_VIEW;
+        {RENDER_MODE = SHOW_ATTRIBUTE_VIEW;}
 			break;
         case KeyEvent::KEY_6:
-			RENDER_MODE = SHOW_SSAO_VIEW;
+        {RENDER_MODE = SHOW_SSAO_VIEW;}
 			break;
         case KeyEvent::KEY_7:
-			RENDER_MODE = SHOW_SSAO_BLURRED_VIEW;
+        {RENDER_MODE = SHOW_SSAO_BLURRED_VIEW;}
 			break;
         case KeyEvent::KEY_8:
-			RENDER_MODE = SHOW_LIGHT_VIEW;
+        {RENDER_MODE = SHOW_LIGHT_VIEW;}
             break;
         case KeyEvent::KEY_9:
-			RENDER_MODE = SHOW_SHADOWS_VIEW;
+        {RENDER_MODE = SHOW_SHADOWS_VIEW;}
 			break;
             
         //change which cube you want to control
-        case 269:
-        {
+        case 269: {
             //minus key
-            if( mDeferredRenderer.getNumCubeLights() > 0)
-            {
+            if( mDeferredRenderer.getNumCubeLights() > 0) {
                 --mCurrLightIndex;
                 if ( mCurrLightIndex < 0) mCurrLightIndex = mDeferredRenderer.getNumCubeLights() - 1;
             }
         }
             break;
-        case 61:
-        {
-            if( mDeferredRenderer.getNumCubeLights() > 0)
-            {
+        case 61: {
+            if( mDeferredRenderer.getNumCubeLights() > 0) {
                 //plus key
                 ++mCurrLightIndex;
                 if ( mCurrLightIndex > mDeferredRenderer.getNumCubeLights() - 1) mCurrLightIndex = 0;
@@ -252,46 +247,37 @@ void CinderDeferredRenderingApp::keyDown( KeyEvent event )
             break;
 			
         //move selected cube light
-		case KeyEvent::KEY_UP:
-		{
-            if ( mDeferredRenderer.getNumCubeLights() > 0)
-            {
+		case KeyEvent::KEY_UP: {
+            if ( mDeferredRenderer.getNumCubeLights() > 0) {
                 if(event.isShiftDown())
-                    mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->setPos( mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->getPos() + Vec3f(0.0f, lightMovInc, 0.0f ));
+                {mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->setPos( mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->getPos() + Vec3f(0.0f, lightMovInc, 0.0f ));}
                 else
-                    mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->setPos( mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->getPos() + Vec3f(0.0f, 0.0f, lightMovInc));
+                {mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->setPos( mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->getPos() + Vec3f(0.0f, 0.0f, lightMovInc));}
             }
 		}
 			break;
-		case KeyEvent::KEY_DOWN:
-		{
-            if ( mDeferredRenderer.getNumCubeLights() > 0)
-            {
+		case KeyEvent::KEY_DOWN: {
+            if ( mDeferredRenderer.getNumCubeLights() > 0) {
                 if(event.isShiftDown())
-                    mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->setPos( mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->getPos() + Vec3f(0.0f, -lightMovInc, 0.0f ));
+                {mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->setPos( mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->getPos() + Vec3f(0.0f, -lightMovInc, 0.0f ));}
                 else
-                    mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->setPos( mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->getPos() + Vec3f(0.0f, 0.0, -lightMovInc));
+                {mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->setPos( mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->getPos() + Vec3f(0.0f, 0.0, -lightMovInc));}
             }
 		}
 			break;
-		case KeyEvent::KEY_LEFT:
-		{
-            if ( mDeferredRenderer.getNumCubeLights() > 0)
-            {
+		case KeyEvent::KEY_LEFT: {
+            if ( mDeferredRenderer.getNumCubeLights() > 0) {
                 mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->setPos( mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->getPos() + Vec3f(lightMovInc, 0.0, 0.0f));
             }
 		}
 			break;
-		case KeyEvent::KEY_RIGHT:
-		{
-            if ( mDeferredRenderer.getNumCubeLights() > 0)
-            {
+		case KeyEvent::KEY_RIGHT: {
+            if ( mDeferredRenderer.getNumCubeLights() > 0) {
                 mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->setPos( mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->getPos() + Vec3f(-lightMovInc, 0.0, 0.0f));
             }
 		}
             break;
-        case KeyEvent::KEY_ESCAPE:
-        {
+        case KeyEvent::KEY_ESCAPE: {
             //never know when you need to quit quick
             exit(1);
         }
@@ -303,7 +289,7 @@ void CinderDeferredRenderingApp::keyDown( KeyEvent event )
 
 #pragma mark - render functions
 
-void CinderDeferredRenderingApp::drawShadowCasters()
+void CinderDeferredRenderingApp::drawShadowCasters() const
 {
 	//just some test objects
     glColor3ub(255,0,0);
@@ -327,7 +313,7 @@ void CinderDeferredRenderingApp::drawShadowCasters()
     
 }
 
-void CinderDeferredRenderingApp::drawPlane()
+void CinderDeferredRenderingApp::drawPlane() const
 {
     int size = 3000;
     //a plane to capture shadows (though it won't cast any itself)

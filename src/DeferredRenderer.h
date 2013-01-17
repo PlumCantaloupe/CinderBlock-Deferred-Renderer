@@ -49,6 +49,7 @@ enum
 //Light Cube Class
 class Light_PS
 {
+    
 public:
     float           aoeDist;
     float           cubeSize;
@@ -72,10 +73,7 @@ public:
         mShadowCam.lookAt( p, Vec3f( p.x, 0.0f, p.z ) );
         
         mCastShadows = castsShadows;
-        if (mCastShadows)
-        {
-            setUpShadowStuff();
-        }
+        if (mCastShadows) {setUpShadowStuff();}
     }
     
     void setUpShadowStuff()
@@ -99,13 +97,13 @@ public:
         mShadowsFbo	= gl::Fbo( SHADOW_MAP_RESOLUTION, SHADOW_MAP_RESOLUTION, format );
     }
     
-	void setPos(Vec3f p)
+	void setPos(const Vec3f p)
     {
         mShadowCam.lookAt( p, Vec3f( p.x, 0.0f, p.z ) );
         pos = p;
     }
     
-	void setCol(Vec3f c)
+	void setCol(const Vec3f c)
     {
         col = c;
         aoeDist = sqrt(col.length()/LIGHT_CUTOFF);
@@ -121,10 +119,10 @@ public:
         gl::drawCube(pos, Vec3f(aoeDist, aoeDist, aoeDist));
     }
     
-    inline const bool doesCastShadows(){ return mCastShadows; }
-    inline const Vec3f& getPos() const {return pos;}
-    inline const Vec3f& getCol() const {return col;}
-	inline float getDist() const {return aoeDist;}
+    bool doesCastShadows() const { return mCastShadows; }
+    Vec3f getPos() const { return pos; }
+    Vec3f getCol() const { return col; }
+	float getDist() const { return aoeDist; }
 };
 
 class DeferredRenderer
@@ -158,13 +156,13 @@ class DeferredRenderer
     vector<Light_PS*>   mCubeLights;
     
     public:
-    DeferredRenderer(){  };
-    ~DeferredRenderer(){  };
+    DeferredRenderer(){};
+    ~DeferredRenderer(){};
     
     vector<Light_PS*>* getCubeLightsRef(){ return &mCubeLights; };
     const int getNumCubeLights(){ return mCubeLights.size(); };
     
-    void setup(boost::function<void(void)> renderShadowCastFunc, boost::function<void(void)> renderObjFunc, MayaCamUI *cam )
+    void setup(const boost::function<void(void)> renderShadowCastFunc, const boost::function<void(void)> renderObjFunc, MayaCamUI *cam )
     {
         fRenderShadowCastersFunc = renderShadowCastFunc;
         fRenderNotShadowCastersFunc = renderObjFunc;
@@ -204,7 +202,7 @@ class DeferredRenderer
 
     void update(){}
     
-    void addCubeLight(Vec3f position, Vec3f color, bool castsShadows = false)
+    void addCubeLight(const Vec3f position, const Vec3f color, const bool castsShadows = false)
     {
         mCubeLights.push_back( new Light_PS( position, color, castsShadows ));
     }
@@ -227,8 +225,6 @@ class DeferredRenderer
         
         renderLightsToFBO();
         renderSSAOToFBO();
-        
-//        renderScreenSpace(); //render full screen quad image of scene
     }
 
     void createShadowMaps()
@@ -237,8 +233,7 @@ class DeferredRenderer
         glEnable(GL_CULL_FACE);
         for(vector<Light_PS*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube)
         {
-            if ( !(*currCube)->doesCastShadows() )
-                continue;
+            if (!(*currCube)->doesCastShadows()) {continue;}
             
             (*currCube)->mCubeDepthFbo.bindFramebuffer();
             glDrawBuffer(GL_NONE);
@@ -251,15 +246,14 @@ class DeferredRenderer
             glLoadMatrixf((*currCube)->mShadowCam.getProjectionMatrix());
             glMatrixMode(GL_MODELVIEW);
             
-            for (size_t i = 0; i < 6; ++i)
-            {
+            for (size_t i = 0; i < 6; ++i) {
                 (*currCube)->mShadowMap.bindDepthFB( i );
                 glClear(GL_DEPTH_BUFFER_BIT);
                 
                 glLoadMatrixf(mLightFaceViewMatrices[i]);
                 glMultMatrixf((*currCube)->mShadowCam.getModelViewMatrix());
                 
-                if (fRenderShadowCastersFunc) fRenderShadowCastersFunc();
+                if (fRenderShadowCastersFunc) {fRenderShadowCastersFunc();}
             }
             
             (*currCube)->mCubeDepthFbo.unbindFramebuffer();
@@ -270,10 +264,8 @@ class DeferredRenderer
     void renderShadowsToFBOs()
     {
         glEnable(GL_CULL_FACE);
-        for(vector<Light_PS*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube)
-        {
-            if ( !(*currCube)->doesCastShadows() )
-                continue;
+        for(vector<Light_PS*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube) {
+            if (!(*currCube)->doesCastShadows()) {continue;}
             
             (*currCube)->mShadowsFbo.bindFramebuffer();
             
@@ -316,10 +308,8 @@ class DeferredRenderer
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         gl::enableAlphaBlending();
         
-        for(vector<Light_PS*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube)
-        {
-            if ( !(*currCube)->doesCastShadows() )
-                continue;
+        for(vector<Light_PS*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube) {
+            if ( !(*currCube)->doesCastShadows() ) {continue;}
             
             (*currCube)->mShadowsFbo.getTexture().bind();
             gl::drawSolidRect( Rectf( 0, (float)mAllShadowsFBO.getHeight(), (float)mAllShadowsFBO.getWidth(), 0) ); //this is different as we are not using shaders to color these quads (need to fit viewport)
@@ -329,11 +319,6 @@ class DeferredRenderer
         mAllShadowsFBO.unbindFramebuffer();
     }
     
-    /*
-     * @Description: render scene to FBO texture
-     * @param: none
-     * @return: none
-     */
     void renderDeferredFBO()
     {
         //render out main scene to FBO
@@ -357,21 +342,13 @@ class DeferredRenderer
         mDeferredShader.uniform("phong_coeff", 0.0f);
         mDeferredShader.uniform("two_sided", 0.0f);
         
-        if (fRenderShadowCastersFunc) fRenderShadowCastersFunc();
-        if (fRenderNotShadowCastersFunc) fRenderNotShadowCastersFunc();
-//        drawShadowCasters();
-//        drawPlane();
+        if (fRenderShadowCastersFunc) {fRenderShadowCastersFunc();}
+        if (fRenderNotShadowCastersFunc) {fRenderNotShadowCastersFunc();}
         
         mDeferredShader.unbind();
-        
         mDeferredFBO.unbindFramebuffer();
     }
     
-    /*
-     * @Description: render SSAO now - woohoo!
-     * @param: KeyEvent
-     * @return: none
-     */
     void renderSSAOToFBO()
     {
         //render out main scene to FBO
@@ -431,11 +408,6 @@ class DeferredRenderer
         mLightGlowFBO.unbindFramebuffer();
     }
     
-    /*
-     * @Description: need to blur[the SSAO texture] horizonatally then vertically (for shader performance reasons). Called ping-ponging as it one FBO drawn to another
-     * @param: KeyEvent
-     * @return: none
-     */
     void pingPongBlur()
     {
         //render horizontal blue first
@@ -475,19 +447,13 @@ class DeferredRenderer
         mPingPongBlurV.unbindFramebuffer();
     }
     
-    /*
-     * @Description: render the final scene ( using all prior created FBOs and combine )
-     * @param: none
-     * @return: none
-     */
-    void renderFullScreenQuad( int renderType )
+    void renderFullScreenQuad( const int renderType )
     {
         prepareDeferredScene(); //prepare all FBOs for use
         
         switch (renderType)
         {
-            case SHOW_FINAL_VIEW:
-            {
+            case SHOW_FINAL_VIEW: {
                 pingPongBlur();
                 
                 gl::setViewport( getWindowBounds() );
@@ -501,13 +467,12 @@ class DeferredRenderer
                 mBasicBlender.uniform("baseTex", 2 );
                 gl::drawSolidRect( Rectf( 0, getWindowHeight(), getWindowWidth(), 0) );
                 mBasicBlender.unbind();
-                mLightGlowFBO.getTexture().bind(2);
-                mAllShadowsFBO.getTexture().bind(1);
+                mLightGlowFBO.getTexture().unbind(2);
+                mAllShadowsFBO.getTexture().unbind(1);
                 mPingPongBlurV.getTexture().unbind(0);
             }
                 break;
-            case SHOW_DIFFUSE_VIEW:
-            {
+            case SHOW_DIFFUSE_VIEW: {
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                 mDeferredFBO.getTexture(0).bind(0);
@@ -515,9 +480,7 @@ class DeferredRenderer
                 mDeferredFBO.getTexture(0).unbind(0);
             }
                 break;
-                
-            case SHOW_DEPTH_VIEW:
-            {
+            case SHOW_DEPTH_VIEW: {
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                 mDeferredFBO.getTexture(1).bind(0);
@@ -528,8 +491,7 @@ class DeferredRenderer
                 mDeferredFBO.getTexture(1).unbind(0);
             }
                 break;
-            case SHOW_POSITION_VIEW:
-            {
+            case SHOW_POSITION_VIEW: {
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                 mDeferredFBO.getTexture(2).bind(0);
@@ -537,9 +499,7 @@ class DeferredRenderer
                 mDeferredFBO.getTexture(2).unbind(0);
             }
                 break;
-                
-            case SHOW_ATTRIBUTE_VIEW:
-            {
+            case SHOW_ATTRIBUTE_VIEW: {
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                 mDeferredFBO.getTexture(3).bind(0);
@@ -548,8 +508,7 @@ class DeferredRenderer
             }
                 break;
                 
-            case SHOW_NORMALMAP_VIEW:
-            {
+            case SHOW_NORMALMAP_VIEW: {
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                 mDeferredFBO.getTexture(1).bind(0);
@@ -557,8 +516,7 @@ class DeferredRenderer
                 mDeferredFBO.getTexture(1).unbind(0);
             }
                 break;
-            case SHOW_SSAO_VIEW:
-            {
+            case SHOW_SSAO_VIEW: {
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                 mSSAOMap.getTexture().bind(0);
@@ -571,8 +529,7 @@ class DeferredRenderer
                 mSSAOMap.getTexture().unbind(0);
             }
                 break;
-            case SHOW_SSAO_BLURRED_VIEW:
-            {
+            case SHOW_SSAO_BLURRED_VIEW: {
                 pingPongBlur();
                 
                 gl::setViewport( getWindowBounds() );
@@ -582,8 +539,7 @@ class DeferredRenderer
                 mPingPongBlurV.getTexture().unbind(0);
             }
                 break;
-            case SHOW_LIGHT_VIEW:
-            {
+            case SHOW_LIGHT_VIEW: {
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                 mLightGlowFBO.getTexture().bind(0);
@@ -591,8 +547,7 @@ class DeferredRenderer
                 mLightGlowFBO.getTexture().unbind(0);
             }
                 break;
-            case SHOW_SHADOWS_VIEW:
-            {
+            case SHOW_SHADOWS_VIEW: {
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                 mAllShadowsFBO.getTexture().bind(0);
@@ -601,23 +556,18 @@ class DeferredRenderer
             }
                 break;
         }
-        
-        //glDisable(GL_TEXTURE_2D);
     }
     
     void drawLightMeshes(gl::GlslProg* shader = NULL)
     {
-        for(vector<Light_PS*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube)
-        {
-            if ( shader != NULL )
-            {
+        for(vector<Light_PS*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube) {
+            if ( shader != NULL ) {
                 shader->uniform("lightPos", mMayaCam->getCamera().getModelViewMatrix().transformPointAffine( (*currCube)->getPos() ) ); //pass light pos to pixel shader
                 shader->uniform("lightCol", (*currCube)->getCol()); //pass light color (magnitude is power) to pixel shader
                 shader->uniform("dist", (*currCube)->getDist()); //pass the light's area of effect radius to pixel shader
                 (*currCube)->renderCubeAOE(); //render the proxy shape
             }
-            else
-            {
+            else {
                 (*currCube)->renderCube(); //render the proxy shape
             }
             
@@ -626,8 +576,8 @@ class DeferredRenderer
     
     void drawScene()
     {
-        if(fRenderShadowCastersFunc) fRenderShadowCastersFunc();
-        if(fRenderNotShadowCastersFunc) fRenderNotShadowCastersFunc();
+        if(fRenderShadowCastersFunc) {fRenderShadowCastersFunc();}
+        if(fRenderNotShadowCastersFunc) {fRenderNotShadowCastersFunc();}
         drawLightMeshes();
     }
     
@@ -655,9 +605,9 @@ class DeferredRenderer
         
         mLightShader.unbind(); //unbind and reset everything to desired values
         mDeferredFBO.getTexture(2).unbind(0); //bind position, normal and color textures from deferred shading pass
-        mDeferredFBO.getTexture(1).unbind(0); //bind normal tex
-        mDeferredFBO.getTexture(0).unbind(0); //bind color tex
-        mDeferredFBO.getTexture(3).unbind(0); //bind attr tex
+        mDeferredFBO.getTexture(1).unbind(1); //bind normal tex
+        mDeferredFBO.getTexture(0).unbind(2); //bind color tex
+        mDeferredFBO.getTexture(3).unbind(3); //bind attr tex
         
         glDisable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
@@ -670,11 +620,6 @@ class DeferredRenderer
         mRandomNoise = gl::Texture( loadImage( loadResource( NOISE_SAMPLER ) ) ); //noise texture required for SSAO calculations
     }
     
-    /* 
-     * @Description: initialize all shaders here
-     * @param: none
-     * @return: none
-     */
     void initShaders()
     {
         mSSAOShader			= gl::GlslProg( loadResource( SSAO_VERT ), loadResource( SSAO_FRAG_LIGHT ) );
@@ -687,11 +632,6 @@ class DeferredRenderer
         mCubeShadowShader   = gl::GlslProg( loadResource( RES_SHADER_CUBESHADOW_VERT ), loadResource( RES_SHADER_CUBESHADOW_FRAG ) );
     }
     
-    /* 
-     * @Description: initialize all FBOs here
-     * @param: none
-     * @return: none
-     */
     void initFBOs()
     {		
         //this FBO will capture normals, depth, and base diffuse in one render pass (as opposed to three)
@@ -714,7 +654,6 @@ class DeferredRenderer
         mPingPongBlurV	= gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
         mSSAOMap		= gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
         mAllShadowsFBO  = gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
-        
         
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );	

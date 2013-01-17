@@ -18,8 +18,6 @@ using boost::shared_ptr;
 
 class CubeShadowMap
 {
-    //static const int X_POS = 0;
-    
 public:
     enum
     {
@@ -32,6 +30,7 @@ public:
     };
     
 	unsigned int textureObject;
+    
 public:
 	//this should be overloaded or generalized to allow different types of texture inputs
     CubeShadowMap()
@@ -63,19 +62,19 @@ public:
         glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
     }
     
-	void bind( int loc = 0)
+	void bind( const int loc = 0)
     {
         //glActiveTexture(GL_TEXTURE0 + loc );
         glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, textureObject);
     }
     
-    void bindDepthFB( int face )
+    void bindDepthFB( const int face )
     {
         glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, textureObject, 0);
 		//glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, tex_depth_cube, 0);
     }
 
-	void unbind( int loc = 0 )
+	void unbind( const int loc = 0 )
     {
         glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, loc );
     }
