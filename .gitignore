@@ -4,6 +4,7 @@ ipch
 *.sdf
 *.xcworkspace
 *.xcuserstate/
+*.opensdf
 
 # Compiled source #
 ###################
