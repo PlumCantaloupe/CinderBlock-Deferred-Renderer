@@ -43,3 +43,7 @@ ipch
 Icon?
 ehthumbs.db
 Thumbs.db
+
+*.xcscheme
+
+*.plist
