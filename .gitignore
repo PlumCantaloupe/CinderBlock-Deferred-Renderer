@@ -3,7 +3,7 @@ Debug/
 ipch
 *.sdf
 *.xcworkspace
-*.xcuserstate/
+xcuserdata/
 *.opensdf
 
 # Compiled source #
