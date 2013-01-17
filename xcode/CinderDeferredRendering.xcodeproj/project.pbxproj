@@ -105,8 +105,7 @@
 		080E96DDFE201D6D7F000001 /* Source */ = {
 			isa = PBXGroup;
 			children = (
-				DFD06661169255550086C6D6 /* DeferredRenderer.h */,
-				DF970BB31683E35F0076C154 /* CubeShadowMap.h */,
+				DF9F3BFD16A7C0D200954C99 /* DeferredRenderer */,
 				00BAE6590E7ED9C10018A608 /* CinderDeferredRenderingApp.cpp */,
 			);
 			name = Source;
@@ -185,6 +184,15 @@
 				1058C7A2FEA54F0111CA2CBB /* Other Frameworks */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		DF9F3BFD16A7C0D200954C99 /* DeferredRenderer */ = {
+			isa = PBXGroup;
+			children = (
+				DFD06661169255550086C6D6 /* DeferredRenderer.h */,
+				DF970BB31683E35F0076C154 /* CubeShadowMap.h */,
+			);
+			name = DeferredRenderer;
 			sourceTree = "<group>";
 		};
 		DFD066621693417E0086C6D6 /* DeferredResources */ = {
