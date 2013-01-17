@@ -26,6 +26,9 @@
     <ClInclude Include="..\src\CubeShadowMap.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\DeferredRenderer.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resources.rc">

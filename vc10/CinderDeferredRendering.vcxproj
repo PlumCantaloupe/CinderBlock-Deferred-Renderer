@@ -109,6 +109,7 @@
   <ItemGroup>
     <ClInclude Include="..\include\Resources.h" />
     <ClInclude Include="..\src\CubeShadowMap.h" />
+    <ClInclude Include="..\src\DeferredRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resources.rc" />
