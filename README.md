@@ -8,9 +8,8 @@ TODO: <br />
 - Anti-aliasing ... jaggies, jaggies everywhere </br>
 - Better quality shadow-mapping <br />
 
-!!!!! If your computer is slow turn off the shadow-mapping by setting last parameter of Light_PS to false (not true)
-Main reason this will be slow will be GPU pipes and RAM as deferred rendering + shadow-mapping uses a huge amount if VRAM (one of its disadvantages)
-Deferred Rendering ADVANTAGE: tons of dynamic point lights (w/o shadows) possible, if not at GPU limits already anyhow
+!!!!! If your computer is slow try turning off the shadow-mapping by setting last parameter of Light_PS to false (not true)
+Deferred rendering + shadow-mapping uses a huge amount if VRAM (one of its disadvantages); but its advantages can be tons of dynamic point lights (w/o shadows) possible, if not at GPU limits already anyhow
 
 Inspiration and shader base from http://www.gamedev.net/page/resources/_/technical/graphics-programming-and-theory/image-space-lighting-r2644 and http://http.developer.nvidia.com/GPUGems2/gpugems2_chapter09.html
 
