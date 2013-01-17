@@ -2,8 +2,7 @@ build/
 Debug/
 ipch
 *.sdf
-*.xcworkspace
-xcuserdata/
+*.xcworkspace/
 *.opensdf
 
 # Compiled source #
