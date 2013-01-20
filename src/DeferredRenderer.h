@@ -271,8 +271,8 @@ class DeferredRenderer
             
             glClearColor( 0.5f, 0.5f, 0.5f, 0.0f );
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-            glDrawBuffer(GL_BACK);
-            glReadBuffer(GL_BACK);
+            //glDrawBuffer(GL_BACK);
+            //glReadBuffer(GL_BACK);
             gl::setViewport( (*currCube)->mShadowsFbo.getBounds() );
             
             glCullFace(GL_BACK); //don't need what we won't see
@@ -410,7 +410,7 @@ class DeferredRenderer
     
     void pingPongBlur()
     {
-        //render horizontal blue first
+        //--------- render horizontal blur first --------------
         mPingPongBlurH.bindFramebuffer();
         gl::setMatricesWindow( (float)mPingPongBlurH.getWidth(), (float)mPingPongBlurH.getHeight() );
         gl::setViewport( mPingPongBlurH.getBounds() );
@@ -425,7 +425,6 @@ class DeferredRenderer
         gl::drawSolidRect( Rectf( 0, 0, getWindowWidth(), getWindowHeight()) );
         mHBlurShader.unbind();
         mSSAOMap.getTexture().unbind(0);
-        
         mPingPongBlurH.unbindFramebuffer();
         
         //--------- now render vertical blur --------------
@@ -443,7 +442,6 @@ class DeferredRenderer
         gl::drawSolidRect( Rectf( 0, 0, getWindowWidth(), getWindowHeight()) );
         mHBlurShader.unbind();
         mPingPongBlurH.getTexture().unbind(0);
-        
         mPingPongBlurV.unbindFramebuffer();
     }
     
@@ -637,7 +635,7 @@ class DeferredRenderer
         //this FBO will capture normals, depth, and base diffuse in one render pass (as opposed to three)
         gl::Fbo::Format mtRFBO;
         mtRFBO.enableDepthBuffer();
-        mtRFBO.setDepthInternalFormat( GL_DEPTH_COMPONENT16 ); //want fbo to have precision depth map as well
+        mtRFBO.setDepthInternalFormat( GL_DEPTH_COMPONENT32 ); //want fbo to have precision depth map as well
         mtRFBO.setColorInternalFormat( GL_RGBA16F_ARB );
         mtRFBO.enableColorBuffer( true, 4 ); // create an FBO with four color attachments (basic diffuse, normal/depth view, attribute view, and position view)
         //mtRFBO.setSamples( 4 ); // uncomment this to enable 4x antialiasing
