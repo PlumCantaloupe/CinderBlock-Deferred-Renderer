@@ -4,6 +4,8 @@ ipch
 *.sdf
 *.xcworkspace/
 *.opensdf
+*.xcscheme
+*.plist
 
 # Compiled source #
 ###################
@@ -43,7 +45,3 @@ ipch
 Icon?
 ehthumbs.db
 Thumbs.db
-
-*.xcscheme
-
-*.plist
