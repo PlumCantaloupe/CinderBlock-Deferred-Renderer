@@ -1,11 +1,13 @@
 What is this?
 A Cinder application that utilizes a deferred rendering engine to render lights and SSAO. There is also point-light shadow-mapping (heavy GPU cost though)
 
+Can hit about 2500 on 2010 MBP and stay above 10fps. Adjust NUM_LIGHTS static var for performance.
+
 <img src="http://farm9.staticflickr.com/8354/8385916971_d8eb4e7dd8_z.jpg" />
 
 TODO: <br />
 - Lots of optimization to do here yet. <br/>
-- Anti-aliasing ... jaggies, jaggies everywhere </br>
+- Anti-aliasing ... jaggies, jaggies everywhere [DONE: Added FXAA] </br>
 - Better quality shadow-mapping <br />
 
 !!!!! If your computer is slow try turning off the shadow-mapping by setting last parameter of Light_PS to false (not true)
@@ -17,7 +19,7 @@ Tips to get better framerates:
  - adjust ap window size
  - go to initFBO's and lower resolution of maps
  - turn off number shadow-mapped lights by setting last parameter of LIGHT_PS constructor to false
- - Tested on Macbook Pro 2010 Mountain Lion ~18-20fps
+ - Tested on Macbook Pro 2010 Mountain Lion ~10-20fps
  - Tested on HP620 Windows 7  > 60 fps
 
 Controls
