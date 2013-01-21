@@ -410,7 +410,7 @@ class DeferredRenderer
         mLightGlowFBO.unbindFramebuffer();
     }
     
-    void pingPongBlur()
+    void pingPongBlurSSAO()
     {
         //--------- render horizontal blur first --------------
         mPingPongBlurH.bindFramebuffer();
@@ -454,7 +454,7 @@ class DeferredRenderer
         switch (renderType)
         {
             case SHOW_FINAL_VIEW: {
-                pingPongBlur();
+                pingPongBlurSSAO();
                 
 				mFinalSSFBO.bindFramebuffer();
 				glClearColor( 0.5f, 0.5f, 0.5f, 1 );
@@ -545,7 +545,7 @@ class DeferredRenderer
             }
                 break;
             case SHOW_SSAO_BLURRED_VIEW: {
-                pingPongBlur();
+                pingPongBlurSSAO();
                 
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen

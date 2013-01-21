@@ -36,6 +36,7 @@
 #include "cinder/ImageIo.h"
 #include "cinder/MayaCamUI.h"
 #include "cinder/params/Params.h"
+#include "cinder/Rand.h"
 
 #include "boost/function.hpp"
 #include "boost/bind.hpp"
@@ -53,7 +54,7 @@ static const float	APP_RES_HORIZONTAL = 1280;
 static const float	APP_RES_VERTICAL = 720;
 static const Vec3f	CAM_POSITION_INIT( -14.0f, 12.0f, -14.0f );
 static const Vec3f	LIGHT_POSITION_INIT( 3.0f, 1.5f, 0.0f );
-static const int    NUM_LIGHTS = 6;        //number of lights
+static const int    NUM_LIGHTS = 2500;        //number of lights
 
 
 class CinderDeferredRenderingApp : public AppBasic 
@@ -141,26 +142,40 @@ void CinderDeferredRenderingApp::setup()
     mDeferredRenderer.addCubeLight(    Vec3f(-2.0f, 4.0f, 6.0f),      Vec3f(0.10f, 0.69f, 0.93f) * LIGHT_BRIGHTNESS, true);      //blue
     mDeferredRenderer.addCubeLight(    Vec3f(4.0f, 6.0f, -4.0f),      Vec3f(0.94f, 0.15f, 0.23f) * LIGHT_BRIGHTNESS, true);      //red
     
-    //add lights to scene (without shadows)
-    mDeferredRenderer.addCubeLight(    Vec3f(-10.0f, 8.0f, 12.0f),    Vec3f(0.99f, 0.67f, 0.23f) * LIGHT_BRIGHTNESS);           //orange
-    mDeferredRenderer.addCubeLight(    Vec3f(6.0f, 10.0f, -10.0f),    Vec3f(0.97f, 0.24f, 0.85f) * LIGHT_BRIGHTNESS);           //pink
-    mDeferredRenderer.addCubeLight(    Vec3f(-8.0f, 12.0f, -8.0f),    Vec3f(0.00f, 0.93f, 0.30f) * LIGHT_BRIGHTNESS);           //green
-    mDeferredRenderer.addCubeLight(    Vec3f(12.0f, 8.0f, 14.0f),     Vec3f(0.98f, 0.96f, 0.32f) * LIGHT_BRIGHTNESS);            //yellow
+//    mDeferredRenderer.addCubeLight(    Vec3f(-10.0f, 8.0f, 12.0f),    Vec3f(0.99f, 0.67f, 0.23f) * LIGHT_BRIGHTNESS, true);           //orange
+//    mDeferredRenderer.addCubeLight(    Vec3f(6.0f, 10.0f, -10.0f),    Vec3f(0.97f, 0.24f, 0.85f) * LIGHT_BRIGHTNESS, true);           //pink
+//    mDeferredRenderer.addCubeLight(    Vec3f(-8.0f, 12.0f, -8.0f),    Vec3f(0.00f, 0.93f, 0.30f) * LIGHT_BRIGHTNESS, true);           //green
+//    mDeferredRenderer.addCubeLight(    Vec3f(12.0f, 8.0f, 14.0f),     Vec3f(0.98f, 0.96f, 0.32f) * LIGHT_BRIGHTNESS, true);            //yellow
     
-    //just adding more lights for fun (could *should* potentially add dozens more with minimal performance hit)
-    int multiplier = 4.0f;
-//    mDeferredRenderer.addCubeLight(    Vec3f(-10.0f * multiplier, 8.0f, 12.0f * multiplier),    Vec3f(0.99f, 0.67f, 0.23f) * LIGHT_BRIGHTNESS);           //orange
-//    mDeferredRenderer.addCubeLight(    Vec3f(6.0f * multiplier, 10.0f, -10.0f * multiplier),    Vec3f(0.97f, 0.24f, 0.85f) * LIGHT_BRIGHTNESS);           //pink
-//    mDeferredRenderer.addCubeLight(    Vec3f(-8.0f, 12.0f, -8.0f * multiplier),                 Vec3f(0.00f, 0.93f, 0.30f) * LIGHT_BRIGHTNESS);           //green
-//    mDeferredRenderer.addCubeLight(    Vec3f(12.0f * multiplier, 8.0f, 14.0f),					Vec3f(0.98f, 0.96f, 0.32f) * LIGHT_BRIGHTNESS);            //yellow
-//    mDeferredRenderer.addCubeLight(    Vec3f(-10.0f * multiplier, 8.0f, 12.0f),                 Vec3f(0.99f, 0.67f, 0.23f) * LIGHT_BRIGHTNESS);           //orange
-//    mDeferredRenderer.addCubeLight(    Vec3f(6.0f, 10.0f, -10.0f * multiplier),                 Vec3f(0.97f, 0.24f, 0.85f) * LIGHT_BRIGHTNESS);           //pink
-//    mDeferredRenderer.addCubeLight(    Vec3f(-8.0f * multiplier, 12.0f, -8.0f * multiplier),    Vec3f(0.00f, 0.93f, 0.30f) * LIGHT_BRIGHTNESS);           //green
-//    mDeferredRenderer.addCubeLight(    Vec3f(12.0f, 8.0f, 14.0f * multiplier),					Vec3f(0.98f, 0.96f, 0.32f) * LIGHT_BRIGHTNESS);            //yellow
-//    mDeferredRenderer.addCubeLight(    Vec3f(-10.0f * multiplier, 8.0f, 12.0f * multiplier),    Vec3f(0.99f, 0.67f, 0.23f) * LIGHT_BRIGHTNESS);           //orange
-//    mDeferredRenderer.addCubeLight(    Vec3f(6.0f * multiplier, 10.0f, -10.0f),                 Vec3f(0.97f, 0.24f, 0.85f) * LIGHT_BRIGHTNESS);           //pink
-//    mDeferredRenderer.addCubeLight(    Vec3f(-8.0f * multiplier, 12.0f, -8.0f * multiplier),    Vec3f(0.00f, 0.93f, 0.30f) * LIGHT_BRIGHTNESS);           //green
-//    mDeferredRenderer.addCubeLight(    Vec3f(12.0f, 8.0f, 14.0f * multiplier),					Vec3f(0.98f, 0.96f, 0.32f) * LIGHT_BRIGHTNESS);            //yellow
+    //add a bunch of lights
+    for(int i = 0; i < NUM_LIGHTS; i++) {
+        
+        int randColIndex = Rand::randInt(5);
+        Vec3f randCol;
+        switch( randColIndex ) {
+            case 0:
+                randCol = Vec3f(0.99f, 0.67f, 0.23f); //orange
+                break;
+            case 1:
+                randCol = Vec3f(0.97f, 0.24f, 0.85f); //pink
+                break;
+            case 2:
+                randCol = Vec3f(0.00f, 0.93f, 0.30f); //green
+                break;
+            case 3:
+                randCol = Vec3f(0.98f, 0.96f, 0.32f); //yellow
+                break;
+            case 4:
+                randCol = Vec3f(0.10f, 0.69f, 0.93f); //blue
+                break;
+            case 5:
+                randCol = Vec3f(0.94f, 0.15f, 0.23f); //red
+                break;
+        };
+        
+        mDeferredRenderer.addCubeLight( Vec3f(Rand::randFloat(-1000.0f, 1000.0f), Rand::randFloat(0.0f, 50.0f), Rand::randFloat(-1000.0f, 1000.0f)),
+                                        randCol * LIGHT_BRIGHTNESS);
+    }
     
     mCurrLightIndex = 0;
 }
