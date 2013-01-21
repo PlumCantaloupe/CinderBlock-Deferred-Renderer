@@ -142,6 +142,7 @@ class DeferredRenderer
     gl::Fbo				mPingPongBlurV;
     gl::Fbo				mLightGlowFBO;
     gl::Fbo				mAllShadowsFBO;
+	gl::Fbo				mFinalSSFBO;
     
 	gl::GlslProg		mCubeShadowShader;
 	
@@ -152,7 +153,8 @@ class DeferredRenderer
     gl::GlslProg		mVBlurShader;
     gl::GlslProg		mLightShader;
     gl::GlslProg		mAplhaToRBG;
-    
+	gl::GlslProg		mFXAAShader;
+
     vector<Light_PS*>   mCubeLights;
     
     public:
@@ -454,6 +456,11 @@ class DeferredRenderer
             case SHOW_FINAL_VIEW: {
                 pingPongBlur();
                 
+				mFinalSSFBO.bindFramebuffer();
+				glClearColor( 0.5f, 0.5f, 0.5f, 1 );
+				glClearDepth(1.0f);
+				glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                 mPingPongBlurV.getTexture().bind(0);
@@ -468,6 +475,16 @@ class DeferredRenderer
                 mLightGlowFBO.getTexture().unbind(2);
                 mAllShadowsFBO.getTexture().unbind(1);
                 mPingPongBlurV.getTexture().unbind(0);
+
+				mFinalSSFBO.unbindFramebuffer();
+
+				mFinalSSFBO.getTexture().bind(0);
+				mFXAAShader.bind();
+				mFXAAShader.uniform("buf0", 0);
+				mFXAAShader.uniform("frameBufSize", Vec2f(mFinalSSFBO.getWidth(), mFinalSSFBO.getHeight()));
+				gl::drawSolidRect( Rectf( 0, getWindowHeight(), getWindowWidth(), 0) );
+				mFXAAShader.unbind();
+				mFinalSSFBO.getTexture().unbind(0);
             }
                 break;
             case SHOW_DIFFUSE_VIEW: {
@@ -598,7 +615,7 @@ class DeferredRenderer
         mDeferredFBO.getTexture(3).bind(3); //bind attr tex
         mLightShader.uniform("attrMap", 3);
         mLightShader.uniform("camPos", mMayaCam->getCamera().getEyePoint());
-        
+
         drawLightMeshes( &mLightShader );
         
         mLightShader.unbind(); //unbind and reset everything to desired values
@@ -628,6 +645,7 @@ class DeferredRenderer
         mLightShader		= gl::GlslProg( loadResource( LIGHT_VERT ), loadResource( LIGHT_FRAG ) );
         mAplhaToRBG         = gl::GlslProg( loadResource( ALPHA_RGB_VERT ), loadResource( ALPHA_RGB_FRAG ) );
         mCubeShadowShader   = gl::GlslProg( loadResource( RES_SHADER_CUBESHADOW_VERT ), loadResource( RES_SHADER_CUBESHADOW_FRAG ) );
+		mFXAAShader			= gl::GlslProg( loadResource( RES_SHADER_FXAA_VERT ), loadResource( RES_SHADER_FXAA_FRAG ) );
     }
     
     void initFBOs()
@@ -652,7 +670,8 @@ class DeferredRenderer
         mPingPongBlurV	= gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
         mSSAOMap		= gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
         mAllShadowsFBO  = gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
-        
+        mFinalSSFBO		= gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
+
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );	
     }

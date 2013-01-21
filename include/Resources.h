@@ -30,4 +30,7 @@
 #define RES_SHADER_CUBESHADOW_VERT      CINDER_RESOURCE( ../resources/DeferredResources/shaders/, CubeShadowMap_glsl.vert, 144, GLSL )
 #define RES_SHADER_CUBESHADOW_FRAG      CINDER_RESOURCE( ../resources/DeferredResources/shaders/, CubeShadowMap_glsl.frag, 145, GLSL )
 
+#define RES_SHADER_FXAA_VERT			CINDER_RESOURCE( ../resources/DeferredResources/shaders/, FXAA_glsl.vert, 146, GLSL )
+#define RES_SHADER_FXAA_FRAG			CINDER_RESOURCE( ../resources/DeferredResources/shaders/, FXAA_glsl.frag, 147, GLSL )
+
 

@@ -10,6 +10,7 @@ void main(void)
 {
 	vec2 coord = sPos.xy/sPos.w*0.5+0.5;
 	vec4 pos = texture2D(positionMap, coord); //get the position from deferred shading
+
 	vec3 VP = lightPos-pos.xyz; //vector between light and point
 	float d = length(VP); //get the distance between the light and point
 	if(d > dist) discard; //if outside of area of effect, discard pixel
@@ -29,8 +30,4 @@ void main(void)
 	//all lights have constant quadratic attenuation of 1.0, with a constant attenuation of 0.8 to avoid dividing by small numbers
 	
     gl_FragColor = vec4(C, 1.0); //output color
-    //gl_FragColor = texture2D(positionMap, coord);
-    //gl_FragColor = texture2D(normalMap, coord);
-    //gl_FragColor = texture2D(colorMap, coord);
-    //gl_FragColor = texture2D(attrMap, coord);
 }

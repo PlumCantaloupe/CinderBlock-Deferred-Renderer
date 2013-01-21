@@ -36,55 +36,61 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\resources\shaders\AlphaToRGB_glsl.frag">
+    <None Include="..\resources\DeferredResources\shaders\AlphaToRGB_glsl.frag">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\AlphaToRGB_glsl.vert">
+    <None Include="..\resources\DeferredResources\shaders\AlphaToRGB_glsl.vert">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\BasicBlender_glsl.frag">
+    <None Include="..\resources\DeferredResources\shaders\BasicBlender_glsl.frag">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\BasicBlender_glsl.vert">
+    <None Include="..\resources\DeferredResources\shaders\BasicBlender_glsl.vert">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\Blur_h_glsl.frag">
+    <None Include="..\resources\DeferredResources\shaders\Blur_h_glsl.frag">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\Blur_h_glsl.vert">
+    <None Include="..\resources\DeferredResources\shaders\Blur_h_glsl.vert">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\Blur_v_glsl.frag">
+    <None Include="..\resources\DeferredResources\shaders\Blur_v_glsl.frag">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\Blur_v_glsl.vert">
+    <None Include="..\resources\DeferredResources\shaders\Blur_v_glsl.vert">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\CubeShadowMap_glsl.frag">
+    <None Include="..\resources\DeferredResources\shaders\CubeShadowMap_glsl.frag">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\CubeShadowMap_glsl.vert">
+    <None Include="..\resources\DeferredResources\shaders\CubeShadowMap_glsl.vert">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\Deferred_glsl.frag">
+    <None Include="..\resources\DeferredResources\shaders\Deferred_glsl.frag">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\Deferred_glsl.vert">
+    <None Include="..\resources\DeferredResources\shaders\Deferred_glsl.vert">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\Light_glsl.frag">
+    <None Include="..\resources\DeferredResources\shaders\FXAA_glsl.frag">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\Light_glsl.vert">
+    <None Include="..\resources\DeferredResources\shaders\FXAA_glsl.vert">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\SSAO_glsl.frag">
+    <None Include="..\resources\DeferredResources\shaders\Light_glsl.frag">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\SSAO_glsl.vert">
+    <None Include="..\resources\DeferredResources\shaders\Light_glsl.vert">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\resources\shaders\SSAOL_glsl.frag">
+    <None Include="..\resources\DeferredResources\shaders\SSAO_glsl.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\resources\DeferredResources\shaders\SSAO_glsl.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\resources\DeferredResources\shaders\SSAOL_glsl.frag">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

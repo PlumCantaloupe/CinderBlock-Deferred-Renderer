@@ -1,0 +1,13 @@
+#version 120
+
+varying vec2 texCoords;
+
+void main(void)
+{
+    gl_Position = ftransform();
+	gl_Position = sign( gl_Position );
+    
+    //Texture coordinate for screen aligned (in correct range):
+	texCoords = (vec2( gl_Position.x, gl_Position.y ) + vec2( 1.0 ) ) * 0.5;
+}
+
