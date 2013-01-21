@@ -52,9 +52,9 @@ using namespace std;
 
 static const float	APP_RES_HORIZONTAL = 1280;
 static const float	APP_RES_VERTICAL = 720;
-static const Vec3f	CAM_POSITION_INIT( -14.0f, 12.0f, -14.0f );
+static const Vec3f	CAM_POSITION_INIT( -14.0f, 7.0f, -14.0f );
 static const Vec3f	LIGHT_POSITION_INIT( 3.0f, 1.5f, 0.0f );
-static const int    NUM_LIGHTS = 2500;        //number of lights
+static const int    NUM_LIGHTS = 1500;        //number of lights
 
 
 class CinderDeferredRenderingApp : public AppBasic 
@@ -126,7 +126,8 @@ void CinderDeferredRenderingApp::setup()
 	//set up camera
     CameraPersp initialCam;
 	initialCam.setPerspective( 45.0f, getWindowAspectRatio(), 0.1, 10000 );
-    initialCam.lookAt(CAM_POSITION_INIT, Vec3f::zero(), Vec3f(0.0f, 1.0f, 0.0f) );
+    initialCam.lookAt(CAM_POSITION_INIT * 1.5f, Vec3f::zero(), Vec3f(0.0f, 1.0f, 0.0f) );
+    initialCam.setCenterOfInterestPoint(Vec3f::zero());
 	mMayaCam.setCurrentCam( initialCam );
 
     //create functions pointers to send to deferred renderer
