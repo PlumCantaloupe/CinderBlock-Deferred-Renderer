@@ -21,15 +21,13 @@ void main()
 	float fs_z = -max(abs_position.x, max(abs_position.y, abs_position.z));
 	vec4 clip = light_projection_matrix * vec4(0.0, 0.0, fs_z, 1.0);
 	float depth = (clip.z / clip.w) * 0.5 + 0.5;
-	float result = shadowCube(shadow, vec4(position_ls.xyz, depth)).z;
-
-	vec3 lvector = light_position - position_cs.xyz;
-	float ldistance = length(lvector);
-	float lintensity = max(dot(normal_cs, normalize(lvector)), 0.0) * 10.0;
-	lintensity /= ldistance * ldistance;
-	lintensity /= lintensity + 0.5;
+	vec4 result = shadowCube(shadow, vec4(position_ls.xyz, depth));
     
-	vec4 diffuse = vec4(0.0, 0.0, 0.0, (1.0-result) * 0.2);
+	float bias = 1.0;
+    float dist = length( light_position - position_cs.xyz );
+    float visibility  = ((result.z * 100.0 - dist) > -bias) ? (1.0) : (1.0);
+    
+	vec4 diffuse = vec4(0.0, 0.0, 0.0, visibility * (1.0-result.z) * 0.2);
     
 	gl_FragColor = diffuse; //vec4(diffuse,1);
 }

@@ -12,6 +12,6 @@ void main(void)
 	vPos = tmp.xyz/tmp.w;
     
 	vNormal = gl_NormalMatrix * gl_Normal;
-    vDepth = -vPos.z/10.0;
+    vDepth = -vPos.z * 0.1;
 }
 
