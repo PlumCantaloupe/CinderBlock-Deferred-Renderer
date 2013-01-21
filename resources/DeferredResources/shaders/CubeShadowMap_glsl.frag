@@ -11,8 +11,6 @@ uniform mat4x4 light_view_matrix;
 uniform mat4x4 light_projection_matrix;
 uniform vec3 light_position;
 
-varying vec2  uv;
-
 void main()
 {
 	vec4 position_ls = light_view_matrix * camera_view_matrix_inv * position_cs;

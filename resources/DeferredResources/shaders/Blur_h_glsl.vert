@@ -1,15 +1,13 @@
-varying vec2 vTexCoord;
- 
-// remember that you should draw a screen aligned quad
+#version 120
+
+varying vec2 uv;
+
 void main(void)
 {
-   gl_Position = ftransform();;
-  
-   // Clean up inaccuracies
-   vec2 Pos;
-   Pos = sign(gl_Vertex.xy);
- 
-   gl_Position = vec4(Pos, 0.0, 1.0) - 0.5;
-   // Image-space
-   vTexCoord = Pos; // * 0.5 + 0.5;
+	gl_Position = ftransform();
+	gl_Position = sign( gl_Position );
+    gl_FrontColor = gl_Color;
+
+	//Texture coordinate for screen aligned (in correct range):
+	uv = (vec2( gl_Position.x, gl_Position.y ) + vec2( 1.0 ) ) * 0.5;
 }

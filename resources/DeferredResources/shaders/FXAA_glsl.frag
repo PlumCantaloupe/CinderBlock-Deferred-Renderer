@@ -7,21 +7,19 @@
 
 uniform sampler2D buf0;
 uniform vec2 frameBufSize;
-varying vec2 texCoords;
+varying vec2 uv;
 
-void main( void ) {
-	//gl_FragColor.xyz = texture2D(buf0,texCoords).xyz;
-	//return;
-
+void main( void ) 
+{
 	float FXAA_SPAN_MAX = 8.0;
 	float FXAA_REDUCE_MUL = 1.0/8.0;
 	float FXAA_REDUCE_MIN = 1.0/128.0;
 
-	vec3 rgbNW=texture2D(buf0,texCoords+(vec2(-1.0,-1.0)/frameBufSize)).xyz;
-	vec3 rgbNE=texture2D(buf0,texCoords+(vec2(1.0,-1.0)/frameBufSize)).xyz;
-	vec3 rgbSW=texture2D(buf0,texCoords+(vec2(-1.0,1.0)/frameBufSize)).xyz;
-	vec3 rgbSE=texture2D(buf0,texCoords+(vec2(1.0,1.0)/frameBufSize)).xyz;
-	vec3 rgbM=texture2D(buf0,texCoords).xyz;
+	vec3 rgbNW=texture2D(buf0,uv+(vec2(-1.0,-1.0)/frameBufSize)).xyz;
+	vec3 rgbNE=texture2D(buf0,uv+(vec2(1.0,-1.0)/frameBufSize)).xyz;
+	vec3 rgbSW=texture2D(buf0,uv+(vec2(-1.0,1.0)/frameBufSize)).xyz;
+	vec3 rgbSE=texture2D(buf0,uv+(vec2(1.0,1.0)/frameBufSize)).xyz;
+	vec3 rgbM=texture2D(buf0,uv).xyz;
 	
 	vec3 luma=vec3(0.299, 0.587, 0.114);
 	float lumaNW = dot(rgbNW, luma);
@@ -48,11 +46,11 @@ void main( void ) {
 		  dir * rcpDirMin)) / frameBufSize;
 		
 	vec3 rgbA = (1.0/2.0) * (
-		texture2D(buf0, texCoords.xy + dir * (1.0/3.0 - 0.5)).xyz +
-		texture2D(buf0, texCoords.xy + dir * (2.0/3.0 - 0.5)).xyz);
+		texture2D(buf0, uv.xy + dir * (1.0/3.0 - 0.5)).xyz +
+		texture2D(buf0, uv.xy + dir * (2.0/3.0 - 0.5)).xyz);
 	vec3 rgbB = rgbA * (1.0/2.0) + (1.0/4.0) * (
-		texture2D(buf0, texCoords.xy + dir * (0.0/3.0 - 0.5)).xyz +
-		texture2D(buf0, texCoords.xy + dir * (3.0/3.0 - 0.5)).xyz);
+		texture2D(buf0, uv.xy + dir * (0.0/3.0 - 0.5)).xyz +
+		texture2D(buf0, uv.xy + dir * (3.0/3.0 - 0.5)).xyz);
 	float lumaB = dot(rgbB, luma);
 
 	if((lumaB < lumaMin) || (lumaB > lumaMax)){

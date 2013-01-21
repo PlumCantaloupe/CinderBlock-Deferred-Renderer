@@ -6,11 +6,13 @@ uniform sampler2D ssoaTex;
 uniform sampler2D shadowsTex;
 uniform sampler2D baseTex;
 
+varying vec2 uv;
+
 void main()
 {
-	vec4 ssaoTex	= texture2D( ssoaTex, gl_TexCoord[0].st );
-    vec4 shadowsTex	= texture2D( shadowsTex, gl_TexCoord[0].st );
-	vec4 baseTex	= texture2D( baseTex, gl_TexCoord[0].st );
+	vec4 ssaoTex	= texture2D( ssoaTex, uv);
+    vec4 shadowsTex	= texture2D( shadowsTex, uv);
+	vec4 baseTex	= texture2D( baseTex, uv);
     
     //blendng by red value (from ssao)
 	float redVal	= 1.0 - ssaoTex.r;

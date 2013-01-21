@@ -368,27 +368,7 @@ class DeferredRenderer
         mSSAOShader.uniform("rnm", 0 );
         mSSAOShader.uniform("normalMap", 1 );
         
-        //look at shader and see you can set these through the client if you so desire.
-        //	mSSAOShader.uniform("rnm", 1 );
-        //	mSSAOShader.uniform("normalMap", 2 );
-        //	mSSAOShader.uniform("totStrength", 1.38f);
-        //	mSSAOShader.uniform("strength", 0.07f);
-        //	mSSAOShader.uniform("offset", 10.0f);
-        //	mSSAOShader.uniform("falloff", 0.2f);
-        //	mSSAOShader.uniform("rad", 0.8f);
-        
-        //	mSSAOShader.uniform("rnm", 1 );
-        //	mSSAOShader.uniform("normalMap", 2 );
-        //	mSSAOShader.uniform("farClipDist", 20.0f);
-        //	mSSAOShader.uniform("screenSizeWidth", (float)getWindowWidth());
-        //	mSSAOShader.uniform("screenSizeHeight", (float)getWindowHeight());
-        
-        //	mSSAOShader.uniform("grandom", 1 );
-        //	mSSAOShader.uniform("gnormals", 2 );
-        //	mSSAOShader.uniform("gdepth", 1 );
-        //	mSSAOShader.uniform("gdiffuse", 1 );
-        
-        gl::drawSolidRect( Rectf( 0, 0, getWindowWidth(), getWindowHeight()) );
+        gl::drawSolidRect( Rectf( 0, 0, mSSAOMap.getWidth(), mSSAOMap.getHeight()) );
         
         mSSAOShader.unbind();
         
@@ -424,7 +404,7 @@ class DeferredRenderer
         mHBlurShader.bind();
         mHBlurShader.uniform("RTScene", 0);
         mHBlurShader.uniform("blurStep", 1.0f/mPingPongBlurH.getWidth()); //so that every "blur step" will equal one pixel width of this FBO
-        gl::drawSolidRect( Rectf( 0, 0, getWindowWidth(), getWindowHeight()) );
+        gl::drawSolidRect( Rectf( 0, 0, mPingPongBlurH.getWidth(), mPingPongBlurH.getHeight()) );
         mHBlurShader.unbind();
         mSSAOMap.getTexture().unbind(0);
         mPingPongBlurH.unbindFramebuffer();
@@ -441,7 +421,7 @@ class DeferredRenderer
         mHBlurShader.bind();
         mHBlurShader.uniform("RTBlurH", 0);
         mHBlurShader.uniform("blurStep", 1.0f/mPingPongBlurH.getHeight()); //so that every "blur step" will equal one pixel height of this FBO
-        gl::drawSolidRect( Rectf( 0, 0, getWindowWidth(), getWindowHeight()) );
+        gl::drawSolidRect( Rectf( 0, 0, mPingPongBlurH.getWidth(), mPingPongBlurH.getHeight()) );
         mHBlurShader.unbind();
         mPingPongBlurH.getTexture().unbind(0);
         mPingPongBlurV.unbindFramebuffer();
@@ -460,9 +440,9 @@ class DeferredRenderer
 				glClearColor( 0.5f, 0.5f, 0.5f, 1 );
 				glClearDepth(1.0f);
 				glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
-                gl::setViewport( getWindowBounds() );
-                gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
+                gl::setMatricesWindow( (float)mFinalSSFBO.getWidth(), (float)mFinalSSFBO.getHeight() );
+                gl::setViewport( mFinalSSFBO.getBounds() );
+                
                 mPingPongBlurV.getTexture().bind(0);
                 mAllShadowsFBO.getTexture().bind(1);
                 mLightGlowFBO.getTexture().bind(2);
@@ -470,7 +450,7 @@ class DeferredRenderer
                 mBasicBlender.uniform("ssaoTex", 0 );
                 mBasicBlender.uniform("shadowsTex", 1 );
                 mBasicBlender.uniform("baseTex", 2 );
-                gl::drawSolidRect( Rectf( 0, getWindowHeight(), getWindowWidth(), 0) );
+                gl::drawSolidRect( Rectf( 0, mFinalSSFBO.getWidth(), mFinalSSFBO.getHeight(), 0) );
                 mBasicBlender.unbind();
                 mLightGlowFBO.getTexture().unbind(2);
                 mAllShadowsFBO.getTexture().unbind(1);
@@ -479,6 +459,8 @@ class DeferredRenderer
 				mFinalSSFBO.unbindFramebuffer();
 
 				mFinalSSFBO.getTexture().bind(0);
+                gl::setViewport( getWindowBounds() );
+                gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
 				mFXAAShader.bind();
 				mFXAAShader.uniform("buf0", 0);
 				mFXAAShader.uniform("frameBufSize", Vec2f(mFinalSSFBO.getWidth(), mFinalSSFBO.getHeight()));
@@ -666,9 +648,9 @@ class DeferredRenderer
         //init screen space render
         mDeferredFBO	= gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, mtRFBO );
         mLightGlowFBO   = gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
-        mPingPongBlurH	= gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
-        mPingPongBlurV	= gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
-        mSSAOMap		= gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
+        mPingPongBlurH	= gl::Fbo( FBO_RESOLUTION.x/2, FBO_RESOLUTION.y/2, format ); //don't need as high res on ssao as it will be blurred anyhow ...
+        mPingPongBlurV	= gl::Fbo( FBO_RESOLUTION.x/2, FBO_RESOLUTION.y/2, format );
+        mSSAOMap		= gl::Fbo( FBO_RESOLUTION.x/2, FBO_RESOLUTION.y/2, format );
         mAllShadowsFBO  = gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
         mFinalSSFBO		= gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
 

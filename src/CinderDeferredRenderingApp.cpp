@@ -13,7 +13,7 @@
 // - adjust ap window size
 // - go to initFBO's and lower resolution of maps
 // - turn off number shadow-mapped lights by setting last parameter of LIGHT_PS constructor to false
-// - Tested on Macbook Pro 2010 Mountain Lion ~20fps
+// - Tested on Macbook Pro 2010 Mountain Lion ~30fps
 // - Tested on HP620 Windows 7 ~60-70 fps
 
 //Controls
@@ -54,7 +54,7 @@ static const float	APP_RES_HORIZONTAL = 1280;
 static const float	APP_RES_VERTICAL = 720;
 static const Vec3f	CAM_POSITION_INIT( -14.0f, 7.0f, -14.0f );
 static const Vec3f	LIGHT_POSITION_INIT( 3.0f, 1.5f, 0.0f );
-static const int    NUM_LIGHTS = 1500;        //number of lights
+static const int    NUM_LIGHTS = 500;        //number of lights
 
 
 class CinderDeferredRenderingApp : public AppBasic 
