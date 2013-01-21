@@ -19,6 +19,8 @@
 		5323E6B60EAFCA7E003A9687 /* QTKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B50EAFCA7E003A9687 /* QTKit.framework */; };
 		53E3CDFC0E86099300238D2B /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 53E3CDFB0E86099300238D2B /* Carbon.framework */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
+		DF228B2216AD3F7500369975 /* FXAA_glsl.frag in Resources */ = {isa = PBXBuildFile; fileRef = DF228B1D16AD3F6800369975 /* FXAA_glsl.frag */; };
+		DF228B2316AD3F7500369975 /* FXAA_glsl.vert in Resources */ = {isa = PBXBuildFile; fileRef = DF228B1E16AD3F6800369975 /* FXAA_glsl.vert */; };
 		DFD0668B1693417E0086C6D6 /* random.png in Resources */ = {isa = PBXBuildFile; fileRef = DFD066781693417E0086C6D6 /* random.png */; };
 		DFD0668C169341E30086C6D6 /* AlphaToRGB_glsl.frag in Resources */ = {isa = PBXBuildFile; fileRef = DFD066661693417E0086C6D6 /* AlphaToRGB_glsl.frag */; };
 		DFD0668D169341E30086C6D6 /* AlphaToRGB_glsl.vert in Resources */ = {isa = PBXBuildFile; fileRef = DFD066671693417E0086C6D6 /* AlphaToRGB_glsl.vert */; };
@@ -58,6 +60,8 @@
 		53E3CDFB0E86099300238D2B /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* CinderDeferredRendering.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CinderDeferredRendering.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DF228B1D16AD3F6800369975 /* FXAA_glsl.frag */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = FXAA_glsl.frag; sourceTree = "<group>"; };
+		DF228B1E16AD3F6800369975 /* FXAA_glsl.vert */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = FXAA_glsl.vert; sourceTree = "<group>"; };
 		DF5878A6168109F000193DC6 /* Resources.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Resources.h; path = ../include/Resources.h; sourceTree = "<group>"; };
 		DF970BB31683E35F0076C154 /* CubeShadowMap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CubeShadowMap.h; path = ../src/CubeShadowMap.h; sourceTree = "<group>"; };
 		DFD06661169255550086C6D6 /* DeferredRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DeferredRenderer.h; path = ../src/DeferredRenderer.h; sourceTree = "<group>"; };
@@ -208,6 +212,8 @@
 		DFD066651693417E0086C6D6 /* shaders */ = {
 			isa = PBXGroup;
 			children = (
+				DF228B1D16AD3F6800369975 /* FXAA_glsl.frag */,
+				DF228B1E16AD3F6800369975 /* FXAA_glsl.vert */,
 				DFD066661693417E0086C6D6 /* AlphaToRGB_glsl.frag */,
 				DFD066671693417E0086C6D6 /* AlphaToRGB_glsl.vert */,
 				DFD066681693417E0086C6D6 /* BasicBlender_glsl.frag */,
@@ -287,6 +293,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DF228B2216AD3F7500369975 /* FXAA_glsl.frag in Resources */,
+				DF228B2316AD3F7500369975 /* FXAA_glsl.vert in Resources */,
 				DFD0668C169341E30086C6D6 /* AlphaToRGB_glsl.frag in Resources */,
 				DFD0668D169341E30086C6D6 /* AlphaToRGB_glsl.vert in Resources */,
 				DFD0668E169341E30086C6D6 /* BasicBlender_glsl.frag in Resources */,
