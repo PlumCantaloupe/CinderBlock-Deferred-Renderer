@@ -3,7 +3,7 @@ A Cinder application that utilizes a deferred rendering engine to render lights 
 
 Can hit about 500 on 2010 MBP and stay around 30fps. Adjust NUM_LIGHTS static var for performance.
 
-<img src="http://farm9.staticflickr.com/8354/8385916971_d8eb4e7dd8_z.jpg" />
+<img src="http://farm9.staticflickr.com/8363/8402994769_16588ca60f_c.jpg" />
 
 TODO: <br />
 - Lots of optimization to do here yet. <br/>
