@@ -46,12 +46,16 @@
 
 #include "Resources.h"
 
+#if defined( CINDER_MAC )
+#include "AppleUtilities.h"
+#endif
+
 using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-static const float	APP_RES_HORIZONTAL = 1280;
-static const float	APP_RES_VERTICAL = 720;
+static const float	APP_RES_HORIZONTAL = 1440;
+static const float	APP_RES_VERTICAL = 900;
 static const Vec3f	CAM_POSITION_INIT( -14.0f, 7.0f, -14.0f );
 static const Vec3f	LIGHT_POSITION_INIT( 3.0f, 1.5f, 0.0f );
 static const int    NUM_LIGHTS = 500;        //number of lights
@@ -59,7 +63,6 @@ static const int    NUM_LIGHTS = 500;        //number of lights
 
 class CinderDeferredRenderingApp : public AppBasic 
 {
-    
 public:
     CinderDeferredRenderingApp();
     virtual ~CinderDeferredRenderingApp();
@@ -100,10 +103,11 @@ CinderDeferredRenderingApp::~CinderDeferredRenderingApp(){}
 void CinderDeferredRenderingApp::prepareSettings( Settings *settings )
 {
 	settings->setWindowSize( APP_RES_HORIZONTAL, APP_RES_VERTICAL );
+    settings->setBorderless( true );
 	settings->setFrameRate( 1000.0f );			//the more the merrier!
 	settings->setResizable( false );			//this isn't going to be resizable
     settings->setFullScreen( false );
-	
+    
 	//make sure secondary screen isn't blacked out as well when in fullscreen mode ( do wish it could accept keyboard focus though :(
 	//settings->enableSecondaryDisplayBlanking( false );
 }
@@ -111,7 +115,12 @@ void CinderDeferredRenderingApp::prepareSettings( Settings *settings )
 void CinderDeferredRenderingApp::setup()
 {
 	gl::disableVerticalSync(); //so I can get a true representation of FPS (if higher than 60 anyhow :/)
-
+    
+    #if defined( CINDER_MAC )
+    //setAlwaysOnTop(true); //the easy but inconvenient way to have fullscreen but not have app have complete control
+    AppleUtilities::autohideMenuBar(); //a better but more complicated way to do the above
+    #endif
+    
 	RENDER_MODE = SHOW_FINAL_VIEW;
     
 	mParams = params::InterfaceGl( "3D_Scene_Base", Vec2i( 225, 125 ) );
