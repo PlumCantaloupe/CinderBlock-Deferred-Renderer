@@ -121,7 +121,7 @@ void CinderDeferredRenderingApp::setup()
     AppleUtilities::autohideMenuBar(); //a better but more complicated way to do the above
     #endif
     
-	RENDER_MODE = SHOW_FINAL_VIEW;
+	RENDER_MODE = DeferredRenderer::SHOW_FINAL_VIEW;
     
 	mParams = params::InterfaceGl( "3D_Scene_Base", Vec2i( 225, 125 ) );
 	mParams.addParam( "Framerate", &mCurrFramerate, "", true );
@@ -223,34 +223,34 @@ void CinderDeferredRenderingApp::keyDown( KeyEvent event )
 	{
         //switch between render views
 		case KeyEvent::KEY_0:
-        {RENDER_MODE = SHOW_FINAL_VIEW;}
+        {RENDER_MODE = DeferredRenderer::SHOW_FINAL_VIEW;}
 			break;
 		case KeyEvent::KEY_1:
-        {RENDER_MODE = SHOW_DIFFUSE_VIEW;}
+        {RENDER_MODE = DeferredRenderer::SHOW_DIFFUSE_VIEW;}
 			break;
 		case KeyEvent::KEY_2:
-        {RENDER_MODE = SHOW_NORMALMAP_VIEW;}
+        {RENDER_MODE = DeferredRenderer::SHOW_NORMALMAP_VIEW;}
 			break;
 		case KeyEvent::KEY_3:
-        {RENDER_MODE = SHOW_DEPTH_VIEW;}
+        {RENDER_MODE = DeferredRenderer::SHOW_DEPTH_VIEW;}
 			break;
         case KeyEvent::KEY_4:
-        {RENDER_MODE = SHOW_POSITION_VIEW;}
+        {RENDER_MODE = DeferredRenderer::SHOW_POSITION_VIEW;}
 			break;
         case KeyEvent::KEY_5:
-        {RENDER_MODE = SHOW_ATTRIBUTE_VIEW;}
+        {RENDER_MODE = DeferredRenderer::SHOW_ATTRIBUTE_VIEW;}
 			break;
         case KeyEvent::KEY_6:
-        {RENDER_MODE = SHOW_SSAO_VIEW;}
+        {RENDER_MODE = DeferredRenderer::SHOW_SSAO_VIEW;}
 			break;
         case KeyEvent::KEY_7:
-        {RENDER_MODE = SHOW_SSAO_BLURRED_VIEW;}
+        {RENDER_MODE = DeferredRenderer::SHOW_SSAO_BLURRED_VIEW;}
 			break;
         case KeyEvent::KEY_8:
-        {RENDER_MODE = SHOW_LIGHT_VIEW;}
+        {RENDER_MODE = DeferredRenderer::SHOW_LIGHT_VIEW;}
             break;
         case KeyEvent::KEY_9:
-        {RENDER_MODE = SHOW_SHADOWS_VIEW;}
+        {RENDER_MODE = DeferredRenderer::SHOW_SHADOWS_VIEW;}
 			break;
             
         //change which cube you want to control

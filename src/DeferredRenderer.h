@@ -30,21 +30,7 @@ using namespace std;
 static const Vec2i	FBO_RESOLUTION(1280, 720);  //using window dimensions
 static const float  LIGHT_CUTOFF = 0.01;        //light intensity cutoff point
 static const float  LIGHT_BRIGHTNESS = 40;      //brightness of lights
-static const int	SHADOW_MAP_RESOLUTION = 512;
-
-enum
-{
-    SHOW_FINAL_VIEW,
-	SHOW_DIFFUSE_VIEW,
-    SHOW_NORMALMAP_VIEW,
-    SHOW_DEPTH_VIEW,
-    SHOW_POSITION_VIEW,
-    SHOW_ATTRIBUTE_VIEW,
-	SHOW_SSAO_VIEW,
-    SHOW_SSAO_BLURRED_VIEW,
-    SHOW_LIGHT_VIEW,
-    SHOW_SHADOWS_VIEW
-};
+static const int	SHADOW_MAP_RESOLUTION = 1024;
 
 //Light Cube Class
 class Light_PS
@@ -61,18 +47,20 @@ public:
     
 private:
     bool            mCastShadows;
+    bool            mVisible;
     
 public:
-	Light_PS(Vec3f p, Vec3f c, bool castsShadows = false) : pos(p), col(c)
+	Light_PS(Vec3f p, Vec3f c, bool castsShadows = false, bool visible = true) : pos(p), col(c)
     {
         aoeDist = sqrt(col.length()/LIGHT_CUTOFF);
         cubeSize = 2.0f;
         
-        //set up fake "light" to grab matrix calculations from 
+        //set up fake "light" to grab matrix calculations from
         mShadowCam.setPerspective( 90.0f, 1.0f, 1.0f, 100.0f );
         mShadowCam.lookAt( p, Vec3f( p.x, 0.0f, p.z ) );
         
         mCastShadows = castsShadows;
+        mVisible = visible;
         if (mCastShadows) {setUpShadowStuff();}
     }
     
@@ -111,7 +99,9 @@ public:
     
 	void renderCube() const
     {
-        gl::drawCube(pos, Vec3f(cubeSize, cubeSize, cubeSize));
+        if( mVisible ) {
+            gl::drawCube(pos, Vec3f(cubeSize, cubeSize, cubeSize));
+        }
     }
     
     void renderCubeAOE() const
@@ -127,7 +117,7 @@ public:
 
 class DeferredRenderer
 {
-    public: 
+public:
     boost::function<void()> fRenderShadowCastersFunc;
     boost::function<void()> fRenderNotShadowCastersFunc;
     MayaCamUI              *mMayaCam;
@@ -154,10 +144,24 @@ class DeferredRenderer
     gl::GlslProg		mLightShader;
     gl::GlslProg		mAplhaToRBG;
 	gl::GlslProg		mFXAAShader;
-
+    
     vector<Light_PS*>   mCubeLights;
     
-    public:
+    enum
+    {
+        SHOW_FINAL_VIEW,
+        SHOW_DIFFUSE_VIEW,
+        SHOW_NORMALMAP_VIEW,
+        SHOW_DEPTH_VIEW,
+        SHOW_POSITION_VIEW,
+        SHOW_ATTRIBUTE_VIEW,
+        SHOW_SSAO_VIEW,
+        SHOW_SSAO_BLURRED_VIEW,
+        SHOW_LIGHT_VIEW,
+        SHOW_SHADOWS_VIEW
+    };
+    
+public:
     DeferredRenderer(){};
     ~DeferredRenderer(){};
     
@@ -201,12 +205,12 @@ class DeferredRenderer
         initFBOs();
         initShaders();
     }
-
+    
     void update(){}
     
-    void addCubeLight(const Vec3f position, const Vec3f color, const bool castsShadows = false)
+    void addCubeLight(const Vec3f position, const Vec3f color, const bool castsShadows = false, const bool visible = true)
     {
-        mCubeLights.push_back( new Light_PS( position, color, castsShadows ));
+        mCubeLights.push_back( new Light_PS( position, color, castsShadows, visible ));
     }
     
     void prepareDeferredScene()
@@ -228,7 +232,7 @@ class DeferredRenderer
         renderLightsToFBO();
         renderSSAOToFBO();
     }
-
+    
     void createShadowMaps()
     {
         //render depth map cube
@@ -284,7 +288,7 @@ class DeferredRenderer
             mCubeShadowShader.bind();
             (*currCube)->mShadowMap.bind(0); //the magic texture
             mCubeShadowShader.uniform("shadow", 0);
-
+            
             mCubeShadowShader.uniform("light_position", mMayaCam->getCamera().getModelViewMatrix().transformPointAffine( (*currCube)->mShadowCam.getEyePoint() )); //conversion from world-space to camera-space (required here)
             mCubeShadowShader.uniform("camera_view_matrix_inv", mMayaCam->getCamera().getInverseModelViewMatrix());
             mCubeShadowShader.uniform("light_view_matrix", (*currCube)->mShadowCam.getModelViewMatrix());
@@ -294,7 +298,7 @@ class DeferredRenderer
             
             (*currCube)->mShadowMap.unbind();
             glDisable(GL_TEXTURE_CUBE_MAP);
-
+            
             mCubeShadowShader.unbind();
             
             (*currCube)->mShadowsFbo.unbindFramebuffer();
@@ -442,7 +446,6 @@ class DeferredRenderer
 				glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
                 gl::setMatricesWindow( (float)mFinalSSFBO.getWidth(), (float)mFinalSSFBO.getHeight() );
                 gl::setViewport( mFinalSSFBO.getBounds() );
-                
                 mPingPongBlurV.getTexture().bind(0);
                 mAllShadowsFBO.getTexture().bind(1);
                 mLightGlowFBO.getTexture().bind(2);
@@ -455,9 +458,8 @@ class DeferredRenderer
                 mLightGlowFBO.getTexture().unbind(2);
                 mAllShadowsFBO.getTexture().unbind(1);
                 mPingPongBlurV.getTexture().unbind(0);
-
 				mFinalSSFBO.unbindFramebuffer();
-
+                
 				mFinalSSFBO.getTexture().bind(0);
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
@@ -597,7 +599,7 @@ class DeferredRenderer
         mDeferredFBO.getTexture(3).bind(3); //bind attr tex
         mLightShader.uniform("attrMap", 3);
         mLightShader.uniform("camPos", mMayaCam->getCamera().getEyePoint());
-
+        
         drawLightMeshes( &mLightShader );
         
         mLightShader.unbind(); //unbind and reset everything to desired values
@@ -631,7 +633,7 @@ class DeferredRenderer
     }
     
     void initFBOs()
-    {		
+    {
         //this FBO will capture normals, depth, and base diffuse in one render pass (as opposed to three)
         gl::Fbo::Format mtRFBO;
         mtRFBO.enableDepthBuffer();
@@ -653,9 +655,9 @@ class DeferredRenderer
         mSSAOMap		= gl::Fbo( FBO_RESOLUTION.x/2, FBO_RESOLUTION.y/2, format );
         mAllShadowsFBO  = gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
         mFinalSSFBO		= gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
-
+        
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );	
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
     }
     
 };

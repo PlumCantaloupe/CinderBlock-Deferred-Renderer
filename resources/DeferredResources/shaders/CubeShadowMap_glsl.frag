@@ -23,9 +23,9 @@ void main()
     
 	float bias = 0.005;
     float dist = length( light_position - position_cs.xyz );
-    float visibility  = ((result.z * 100.0 - dist) > -bias) ? (0.0) : (1.0);
+    float visibility  = ((result.z * 100.0 - dist * bias) > -bias) ? (0.0) : (1.0);
     
-	vec4 diffuse = vec4(0.0, 0.0, 0.0, visibility * (1.0-result.z) * 0.2);
+	vec4 diffuse = vec4(0.0, 0.0, 0.0, visibility * (1.0-result.z) * 0.3);
     
 	gl_FragColor = diffuse;
 }
