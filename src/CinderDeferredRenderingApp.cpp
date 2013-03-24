@@ -46,6 +46,8 @@
 
 #include "Resources.h"
 
+#include <boost/lambda/lambda.hpp>
+
 #if defined( CINDER_MAC )
 #include "AppleUtilities.h"
 #endif
@@ -76,8 +78,8 @@ public:
 	void mouseDrag( MouseEvent event );
     void keyDown( app::KeyEvent event );
     
-    void drawShadowCasters() const;
-    void drawPlane() const;
+    void drawShadowCasters(gl::GlslProg* deferShader) const;
+    void drawNonShadowCasters(gl::GlslProg* deferShader) const;
     
 protected:
     int RENDER_MODE;
@@ -86,6 +88,7 @@ protected:
     cinder::params::InterfaceGl mParams;
     bool				mShowParams;
     float				mCurrFramerate;
+    gl::Texture         mEarthTex;
 	
     //camera
     MayaCamUI           mMayaCam;
@@ -114,6 +117,9 @@ void CinderDeferredRenderingApp::prepareSettings( Settings *settings )
 
 void CinderDeferredRenderingApp::setup()
 {
+    //!!test texture for diffuse texture
+    mEarthTex = gl::Texture( loadImage( loadResource( RES_EARTH_TEX ) ) );
+    
 	gl::disableVerticalSync(); //so I can get a true representation of FPS (if higher than 60 anyhow :/)
     
     #if defined( CINDER_MAC )
@@ -140,10 +146,10 @@ void CinderDeferredRenderingApp::setup()
 	mMayaCam.setCurrentCam( initialCam );
 
     //create functions pointers to send to deferred renderer
-    boost::function<void(void)> fRenderShadowCastersFunc;
-    boost::function<void(void)> fRenderNotShadowCastersFunc;
-    fRenderShadowCastersFunc = boost::bind(&CinderDeferredRenderingApp::drawShadowCasters, this);
-    fRenderNotShadowCastersFunc = boost::bind(&CinderDeferredRenderingApp::drawPlane, this);
+    boost::function<void(gl::GlslProg*)> fRenderShadowCastersFunc;
+    boost::function<void(gl::GlslProg*)> fRenderNotShadowCastersFunc;
+    fRenderShadowCastersFunc = boost::bind(&CinderDeferredRenderingApp::drawShadowCasters, this, boost::lambda::_1 );
+    fRenderNotShadowCastersFunc = boost::bind(&CinderDeferredRenderingApp::drawNonShadowCasters, this,  boost::lambda::_1 );
     
     //setting up deferred renderer ...
     mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, &mMayaCam );
@@ -314,11 +320,22 @@ void CinderDeferredRenderingApp::keyDown( KeyEvent event )
 
 #pragma mark - render functions
 
-void CinderDeferredRenderingApp::drawShadowCasters() const
+void CinderDeferredRenderingApp::drawShadowCasters(gl::GlslProg* deferShader) const
 {
 	//just some test objects
+    if(deferShader != NULL) {
+        deferShader->uniform("useTexture", 1.0f);
+        deferShader->uniform("tex0", 0);
+        mEarthTex.bind(0);
+    }
+    
     glColor3ub(255,0,0);
     gl::drawSphere( Vec3f(-1.0, 0.0,-1.0), 1.0f, 30 );
+    
+    if(deferShader != NULL) {
+        deferShader->uniform("useTexture", 0.0f);
+        mEarthTex.unbind(0);
+    }
     
 	glColor3ub(0,255,0);
     gl::drawCube( Vec3f( 1.0f, 0.0f, 1.0f ), Vec3f( 2.0f, 2.0f, 2.0f ) );
@@ -338,7 +355,7 @@ void CinderDeferredRenderingApp::drawShadowCasters() const
     
 }
 
-void CinderDeferredRenderingApp::drawPlane() const
+void CinderDeferredRenderingApp::drawNonShadowCasters(gl::GlslProg* deferShader) const
 {
     int size = 3000;
     //a plane to capture shadows (though it won't cast any itself)

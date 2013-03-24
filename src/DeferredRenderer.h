@@ -118,8 +118,8 @@ public:
 class DeferredRenderer
 {
 public:
-    boost::function<void()> fRenderShadowCastersFunc;
-    boost::function<void()> fRenderNotShadowCastersFunc;
+    boost::function<void(gl::GlslProg*)> fRenderShadowCastersFunc;
+    boost::function<void(gl::GlslProg*)> fRenderNotShadowCastersFunc;
     MayaCamUI              *mMayaCam;
     
     Matrix44f           mLightFaceViewMatrices[6];
@@ -168,7 +168,7 @@ public:
     vector<Light_PS*>* getCubeLightsRef(){ return &mCubeLights; };
     const int getNumCubeLights(){ return mCubeLights.size(); };
     
-    void setup(const boost::function<void(void)> renderShadowCastFunc, const boost::function<void(void)> renderObjFunc, MayaCamUI *cam )
+    void setup(const boost::function<void(gl::GlslProg*)> renderShadowCastFunc, const boost::function<void(gl::GlslProg*)> renderObjFunc, MayaCamUI *cam )
     {
         fRenderShadowCastersFunc = renderShadowCastFunc;
         fRenderNotShadowCastersFunc = renderObjFunc;
@@ -259,7 +259,7 @@ public:
                 glLoadMatrixf(mLightFaceViewMatrices[i]);
                 glMultMatrixf((*currCube)->mShadowCam.getModelViewMatrix());
                 
-                if (fRenderShadowCastersFunc) {fRenderShadowCastersFunc();}
+                if (fRenderShadowCastersFunc) {fRenderShadowCastersFunc(NULL);}
             }
             
             (*currCube)->mCubeDepthFbo.unbindFramebuffer();
@@ -340,6 +340,7 @@ public:
         mDeferredShader.uniform("diff_coeff", 0.15f);
         mDeferredShader.uniform("phong_coeff", 0.3f);
         mDeferredShader.uniform("two_sided", 0.8f);
+        mDeferredShader.uniform("useTexture", 0.0f);
         
         drawLightMeshes();
         
@@ -348,8 +349,8 @@ public:
         mDeferredShader.uniform("phong_coeff", 0.0f);
         mDeferredShader.uniform("two_sided", 0.0f);
         
-        if (fRenderShadowCastersFunc) {fRenderShadowCastersFunc();}
-        if (fRenderNotShadowCastersFunc) {fRenderNotShadowCastersFunc();}
+        if (fRenderShadowCastersFunc) {fRenderShadowCastersFunc(&mDeferredShader);}
+        if (fRenderNotShadowCastersFunc) {fRenderNotShadowCastersFunc(&mDeferredShader);}
         
         mDeferredShader.unbind();
         mDeferredFBO.unbindFramebuffer();
@@ -575,8 +576,8 @@ public:
     
     void drawScene()
     {
-        if(fRenderShadowCastersFunc) {fRenderShadowCastersFunc();}
-        if(fRenderNotShadowCastersFunc) {fRenderNotShadowCastersFunc();}
+        if(fRenderShadowCastersFunc) {fRenderShadowCastersFunc(NULL);}
+        if(fRenderNotShadowCastersFunc) {fRenderNotShadowCastersFunc(NULL);}
         drawLightMeshes();
     }
     

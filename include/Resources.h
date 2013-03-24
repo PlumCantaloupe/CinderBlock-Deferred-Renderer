@@ -33,4 +33,7 @@
 #define RES_SHADER_FXAA_VERT			CINDER_RESOURCE( ../resources/DeferredResources/shaders/, FXAA_glsl.vert, 146, GLSL )
 #define RES_SHADER_FXAA_FRAG			CINDER_RESOURCE( ../resources/DeferredResources/shaders/, FXAA_glsl.frag, 147, GLSL )
 
+//test Image
+#define RES_EARTH_TEX                   CINDER_RESOURCE( ../resources/, Earth_from_NASA.jpg, 148, IMAGE )
+
 

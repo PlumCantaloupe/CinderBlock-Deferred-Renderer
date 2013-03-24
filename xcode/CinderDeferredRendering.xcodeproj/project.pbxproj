@@ -22,6 +22,7 @@
 		DF15D26316C2CDC900788714 /* AppleUtilities.mm in Sources */ = {isa = PBXBuildFile; fileRef = DF15D25E16C2A7B600788714 /* AppleUtilities.mm */; };
 		DF228B2216AD3F7500369975 /* FXAA_glsl.frag in Resources */ = {isa = PBXBuildFile; fileRef = DF228B1D16AD3F6800369975 /* FXAA_glsl.frag */; };
 		DF228B2316AD3F7500369975 /* FXAA_glsl.vert in Resources */ = {isa = PBXBuildFile; fileRef = DF228B1E16AD3F6800369975 /* FXAA_glsl.vert */; };
+		DF29E54716FE998200F37AC9 /* Earth_from_NASA.jpg in Resources */ = {isa = PBXBuildFile; fileRef = DF29E54616FE998200F37AC9 /* Earth_from_NASA.jpg */; };
 		DFD0668B1693417E0086C6D6 /* random.png in Resources */ = {isa = PBXBuildFile; fileRef = DFD066781693417E0086C6D6 /* random.png */; };
 		DFD0668C169341E30086C6D6 /* AlphaToRGB_glsl.frag in Resources */ = {isa = PBXBuildFile; fileRef = DFD066661693417E0086C6D6 /* AlphaToRGB_glsl.frag */; };
 		DFD0668D169341E30086C6D6 /* AlphaToRGB_glsl.vert in Resources */ = {isa = PBXBuildFile; fileRef = DFD066671693417E0086C6D6 /* AlphaToRGB_glsl.vert */; };
@@ -65,6 +66,7 @@
 		DF15D26116C2BD8500788714 /* AppleUtilities.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = AppleUtilities.h; path = ../src/AppleUtilities.h; sourceTree = "<group>"; };
 		DF228B1D16AD3F6800369975 /* FXAA_glsl.frag */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = FXAA_glsl.frag; sourceTree = "<group>"; };
 		DF228B1E16AD3F6800369975 /* FXAA_glsl.vert */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = FXAA_glsl.vert; sourceTree = "<group>"; };
+		DF29E54616FE998200F37AC9 /* Earth_from_NASA.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; name = Earth_from_NASA.jpg; path = ../resources/Earth_from_NASA.jpg; sourceTree = "<group>"; };
 		DF5878A6168109F000193DC6 /* Resources.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Resources.h; path = ../include/Resources.h; sourceTree = "<group>"; };
 		DF970BB31683E35F0076C154 /* CubeShadowMap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CubeShadowMap.h; path = ../src/CubeShadowMap.h; sourceTree = "<group>"; };
 		DFD06661169255550086C6D6 /* DeferredRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DeferredRenderer.h; path = ../src/DeferredRenderer.h; sourceTree = "<group>"; };
@@ -179,6 +181,7 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				DF29E54616FE998200F37AC9 /* Earth_from_NASA.jpg */,
 				DFD066621693417E0086C6D6 /* DeferredResources */,
 				8D1107310486CEB800E47090 /* Info.plist */,
 				00CCAF14116A9FEE008396D5 /* CinderApp.icns */,
@@ -319,6 +322,7 @@
 				DFD0669C169341E40086C6D6 /* SSAOL_glsl.frag in Resources */,
 				00CCAF15116A9FEE008396D5 /* CinderApp.icns in Resources */,
 				DFD0668B1693417E0086C6D6 /* random.png in Resources */,
+				DF29E54716FE998200F37AC9 /* Earth_from_NASA.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
