@@ -32,3 +32,5 @@ can move a selected light with arrows keys (and shift and arrow keys for up and 
 switch between "selected" lights by using - and + (will update index number in params with a delay)
 
 please let me know if you make any optimizations, or have any optimization suggestions. Always more to learn; and more fps is always appreciated :)
+
+THANKS: Also special thanks to the many Cube-mapping, deferred rendering, SSAO, and shadow-mapping bits of code out there. They were all very helpful in creating this project.
