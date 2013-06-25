@@ -19,7 +19,6 @@
 		5323E6B60EAFCA7E003A9687 /* QTKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5323E6B50EAFCA7E003A9687 /* QTKit.framework */; };
 		53E3CDFC0E86099300238D2B /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 53E3CDFB0E86099300238D2B /* Carbon.framework */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
-		DF15D26316C2CDC900788714 /* AppleUtilities.mm in Sources */ = {isa = PBXBuildFile; fileRef = DF15D25E16C2A7B600788714 /* AppleUtilities.mm */; };
 		DF228B2216AD3F7500369975 /* FXAA_glsl.frag in Resources */ = {isa = PBXBuildFile; fileRef = DF228B1D16AD3F6800369975 /* FXAA_glsl.frag */; };
 		DF228B2316AD3F7500369975 /* FXAA_glsl.vert in Resources */ = {isa = PBXBuildFile; fileRef = DF228B1E16AD3F6800369975 /* FXAA_glsl.vert */; };
 		DF29E54716FE998200F37AC9 /* Earth_from_NASA.jpg in Resources */ = {isa = PBXBuildFile; fileRef = DF29E54616FE998200F37AC9 /* Earth_from_NASA.jpg */; };
@@ -62,8 +61,6 @@
 		53E3CDFB0E86099300238D2B /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* CinderDeferredRendering.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CinderDeferredRendering.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		DF15D25E16C2A7B600788714 /* AppleUtilities.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppleUtilities.mm; path = ../src/AppleUtilities.mm; sourceTree = "<group>"; };
-		DF15D26116C2BD8500788714 /* AppleUtilities.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = AppleUtilities.h; path = ../src/AppleUtilities.h; sourceTree = "<group>"; };
 		DF228B1D16AD3F6800369975 /* FXAA_glsl.frag */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = FXAA_glsl.frag; sourceTree = "<group>"; };
 		DF228B1E16AD3F6800369975 /* FXAA_glsl.vert */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = FXAA_glsl.vert; sourceTree = "<group>"; };
 		DF29E54616FE998200F37AC9 /* Earth_from_NASA.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; name = Earth_from_NASA.jpg; path = ../resources/Earth_from_NASA.jpg; sourceTree = "<group>"; };
@@ -116,8 +113,6 @@
 			children = (
 				DF9F3BFD16A7C0D200954C99 /* DeferredRenderer */,
 				00BAE6590E7ED9C10018A608 /* CinderDeferredRenderingApp.cpp */,
-				DF15D25E16C2A7B600788714 /* AppleUtilities.mm */,
-				DF15D26116C2BD8500788714 /* AppleUtilities.h */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -333,7 +328,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DF15D26316C2CDC900788714 /* AppleUtilities.mm in Sources */,
 				00BAE65A0E7ED9C10018A608 /* CinderDeferredRenderingApp.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
