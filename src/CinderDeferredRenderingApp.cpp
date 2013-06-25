@@ -40,24 +40,19 @@
 
 #include "boost/function.hpp"
 #include "boost/bind.hpp"
+#include <boost/lambda/lambda.hpp>
 
 #include "CubeShadowMap.h"
 #include "DeferredRenderer.h"
 
 #include "Resources.h"
 
-#include <boost/lambda/lambda.hpp>
-
-#if defined( CINDER_MAC )
-#include "AppleUtilities.h"
-#endif
-
 using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-static const float	APP_RES_HORIZONTAL = 1440;
-static const float	APP_RES_VERTICAL = 900;
+static const float	APP_RES_HORIZONTAL = 1024.0f;
+static const float	APP_RES_VERTICAL = 768.0f;
 static const Vec3f	CAM_POSITION_INIT( -14.0f, 7.0f, -14.0f );
 static const Vec3f	LIGHT_POSITION_INIT( 3.0f, 1.5f, 0.0f );
 static const int    NUM_LIGHTS = 500;        //number of lights
@@ -122,11 +117,6 @@ void CinderDeferredRenderingApp::setup()
     
 	gl::disableVerticalSync(); //so I can get a true representation of FPS (if higher than 60 anyhow :/)
     
-    #if defined( CINDER_MAC )
-    //setAlwaysOnTop(true); //the easy but inconvenient way to have fullscreen but not have app have complete control
-    AppleUtilities::autohideMenuBar(); //a better but more complicated way to do the above
-    #endif
-    
 	RENDER_MODE = DeferredRenderer::SHOW_FINAL_VIEW;
     
 	mParams = params::InterfaceGl( "3D_Scene_Base", Vec2i( 225, 125 ) );
@@ -152,45 +142,42 @@ void CinderDeferredRenderingApp::setup()
     fRenderNotShadowCastersFunc = boost::bind(&CinderDeferredRenderingApp::drawNonShadowCasters, this,  boost::lambda::_1 );
     
     //setting up deferred renderer ...
-    mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, &mMayaCam );
+    mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, NULL, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 );
     
     //have these cast point light shadows
-    mDeferredRenderer.addCubeLight(    Vec3f(-2.0f, 4.0f, 6.0f),      Vec3f(0.10f, 0.69f, 0.93f) * LIGHT_BRIGHTNESS, true);      //blue
-    mDeferredRenderer.addCubeLight(    Vec3f(4.0f, 6.0f, -4.0f),      Vec3f(0.94f, 0.15f, 0.23f) * LIGHT_BRIGHTNESS, true);      //red
-    
-//    mDeferredRenderer.addCubeLight(    Vec3f(-10.0f, 8.0f, 12.0f),    Vec3f(0.99f, 0.67f, 0.23f) * LIGHT_BRIGHTNESS, true);           //orange
-//    mDeferredRenderer.addCubeLight(    Vec3f(6.0f, 10.0f, -10.0f),    Vec3f(0.97f, 0.24f, 0.85f) * LIGHT_BRIGHTNESS, true);           //pink
-//    mDeferredRenderer.addCubeLight(    Vec3f(-8.0f, 12.0f, -8.0f),    Vec3f(0.00f, 0.93f, 0.30f) * LIGHT_BRIGHTNESS, true);           //green
-//    mDeferredRenderer.addCubeLight(    Vec3f(12.0f, 8.0f, 14.0f),     Vec3f(0.98f, 0.96f, 0.32f) * LIGHT_BRIGHTNESS, true);            //yellow
+    mDeferredRenderer.addCubeLight(    Vec3f(-2.0f, 4.0f, 6.0f),      Color(0.10f, 0.69f, 0.93f) * LIGHT_BRIGHTNESS_DEFAULT, true);      //blue
+    mDeferredRenderer.addCubeLight(    Vec3f(4.0f, 6.0f, -4.0f),      Color(0.94f, 0.15f, 0.23f) * LIGHT_BRIGHTNESS_DEFAULT, true);      //red
     
     //add a bunch of lights
     for(int i = 0; i < NUM_LIGHTS; i++) {
         
         int randColIndex = Rand::randInt(5);
-        Vec3f randCol;
+        Color randCol;
         switch( randColIndex ) {
             case 0:
-                randCol = Vec3f(0.99f, 0.67f, 0.23f); //orange
+                randCol = Color(0.99f, 0.67f, 0.23f); //orange
                 break;
             case 1:
-                randCol = Vec3f(0.97f, 0.24f, 0.85f); //pink
+                randCol = Color(0.97f, 0.24f, 0.85f); //pink
                 break;
             case 2:
-                randCol = Vec3f(0.00f, 0.93f, 0.30f); //green
+                randCol = Color(0.00f, 0.93f, 0.30f); //green
                 break;
             case 3:
-                randCol = Vec3f(0.98f, 0.96f, 0.32f); //yellow
+                randCol = Color(0.98f, 0.96f, 0.32f); //yellow
                 break;
             case 4:
-                randCol = Vec3f(0.10f, 0.69f, 0.93f); //blue
+                randCol = Color(0.10f, 0.69f, 0.93f); //blue
                 break;
             case 5:
-                randCol = Vec3f(0.94f, 0.15f, 0.23f); //red
+                randCol = Color(0.94f, 0.15f, 0.23f); //red
                 break;
         };
         
-        mDeferredRenderer.addCubeLight( Vec3f(Rand::randFloat(-1000.0f, 1000.0f), Rand::randFloat(0.0f, 50.0f), Rand::randFloat(-1000.0f, 1000.0f)),
-                                        randCol * LIGHT_BRIGHTNESS);
+        mDeferredRenderer.addCubeLight( Vec3f(Rand::randFloat(-1000.0f, 1000.0f),
+                                        Rand::randFloat(0.0f, 50.0f),
+                                        Rand::randFloat(-1000.0f, 1000.0f)),
+                                        randCol * LIGHT_BRIGHTNESS_DEFAULT);
     }
     
     mCurrLightIndex = 0;

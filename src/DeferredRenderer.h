@@ -27,37 +27,40 @@ using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-static const Vec2i	FBO_RESOLUTION(1280, 720);  //using window dimensions
-static const float  LIGHT_CUTOFF = 0.01;        //light intensity cutoff point
-static const float  LIGHT_BRIGHTNESS = 40;      //brightness of lights
-static const int	SHADOW_MAP_RESOLUTION = 1024;
+static const float  LIGHT_CUTOFF_DEFAULT = 0.01;        //light intensity cutoff point
+static const float  LIGHT_BRIGHTNESS_DEFAULT = 60;      //brightness of lights
 
 //Light Cube Class
 class Light_PS
 {
     
 public:
-    float           aoeDist;
-    float           cubeSize;
-	Vec3f           pos, col;
+    float           mCubeSize;
     CameraPersp     mShadowCam;
     CubeShadowMap   mShadowMap;
     gl::Fbo			mCubeDepthFbo;
     gl::Fbo			mShadowsFbo;
     
 private:
+    Vec3f           mPos;
+    Color           mCol;
     bool            mCastShadows;
     bool            mVisible;
+    int             mShadowMapRes;
+    float           mAOEDist;
     
 public:
-	Light_PS(Vec3f p, Vec3f c, bool castsShadows = false, bool visible = true) : pos(p), col(c)
+	Light_PS(Vec3f pos, Color col, int shadowMapRes, bool castsShadows = false, bool visible = true)
     {
-        aoeDist = sqrt(col.length()/LIGHT_CUTOFF);
-        cubeSize = 2.0f;
+        mPos = pos;
+        mCol = col;
+        mAOEDist = sqrt(col.length()/LIGHT_CUTOFF_DEFAULT);
+        mCubeSize = 2.0f;
+        mShadowMapRes = shadowMapRes;
         
         //set up fake "light" to grab matrix calculations from
         mShadowCam.setPerspective( 90.0f, 1.0f, 1.0f, 100.0f );
-        mShadowCam.lookAt( p, Vec3f( p.x, 0.0f, p.z ) );
+        mShadowCam.lookAt( pos, Vec3f( pos.x, 0.0f, pos.z ) );
         
         mCastShadows = castsShadows;
         mVisible = visible;
@@ -67,7 +70,7 @@ public:
     void setUpShadowStuff()
     {
         //set up cube map for point shadows
-        mShadowMap.setup( SHADOW_MAP_RESOLUTION );
+        mShadowMap.setup( mShadowMapRes );
         
         //create FBO to hold depth values from cube map
         gl::Fbo::Format formatShadow;
@@ -76,43 +79,55 @@ public:
         formatShadow.setMinFilter(GL_LINEAR);
         formatShadow.setMagFilter(GL_LINEAR);
         formatShadow.setWrap(GL_CLAMP, GL_CLAMP);
-        mCubeDepthFbo   = gl::Fbo( SHADOW_MAP_RESOLUTION, SHADOW_MAP_RESOLUTION, formatShadow);
+        mCubeDepthFbo   = gl::Fbo( mShadowMapRes, mShadowMapRes, formatShadow);
         
         gl::Fbo::Format format;
         //format.setDepthInternalFormat( GL_DEPTH_COMPONENT32 );
         format.setColorInternalFormat( GL_RGBA16F_ARB );
         //format.setSamples( 4 ); // enable 4x antialiasing
-        mShadowsFbo	= gl::Fbo( SHADOW_MAP_RESOLUTION, SHADOW_MAP_RESOLUTION, format );
+        mShadowsFbo	= gl::Fbo( mShadowMapRes, mShadowMapRes, format );
     }
     
-	void setPos(const Vec3f p)
+	void setPos(const Vec3f pos)
     {
-        mShadowCam.lookAt( p, Vec3f( p.x, 0.0f, p.z ) );
-        pos = p;
+        mShadowCam.lookAt( pos, Vec3f( pos.x, 0.0f, pos.z ) );
+        mPos = pos;
     }
     
-	void setCol(const Vec3f c)
+    Vec3f getPos() const
     {
-        col = c;
-        aoeDist = sqrt(col.length()/LIGHT_CUTOFF);
+        return mPos;
+    }
+    
+	void setCol(const Color col)
+    {
+        mCol = col;
+        mAOEDist = sqrt(col.length()/LIGHT_CUTOFF_DEFAULT);
+    }
+    
+    Color getColor() const
+    {
+        return mCol;
+    }
+    
+    float getAOEDist() const
+    {
+        return mAOEDist;
     }
     
 	void renderCube() const
     {
         if( mVisible ) {
-            gl::drawCube(pos, Vec3f(cubeSize, cubeSize, cubeSize));
+            gl::drawCube(mPos, Vec3f(mCubeSize, mCubeSize, mCubeSize));
         }
     }
     
     void renderCubeAOE() const
     {
-        gl::drawCube(pos, Vec3f(aoeDist, aoeDist, aoeDist));
+        gl::drawCube(mPos, Vec3f(mAOEDist, mAOEDist, mAOEDist));
     }
     
     bool doesCastShadows() const { return mCastShadows; }
-    Vec3f getPos() const { return pos; }
-    Vec3f getCol() const { return col; }
-	float getDist() const { return aoeDist; }
 };
 
 class DeferredRenderer
@@ -120,6 +135,7 @@ class DeferredRenderer
 public:
     boost::function<void(gl::GlslProg*)> fRenderShadowCastersFunc;
     boost::function<void(gl::GlslProg*)> fRenderNotShadowCastersFunc;
+    boost::function<void()> fRenderOverlayFunc;
     MayaCamUI              *mMayaCam;
     
     Matrix44f           mLightFaceViewMatrices[6];
@@ -133,6 +149,7 @@ public:
     gl::Fbo				mLightGlowFBO;
     gl::Fbo				mAllShadowsFBO;
 	gl::Fbo				mFinalSSFBO;
+    gl::Fbo				mOverlayFBO;
     
 	gl::GlslProg		mCubeShadowShader;
 	
@@ -142,10 +159,13 @@ public:
     gl::GlslProg		mHBlurShader;
     gl::GlslProg		mVBlurShader;
     gl::GlslProg		mLightShader;
-    gl::GlslProg		mAplhaToRBG;
+    gl::GlslProg		mAlphaToRBG;
 	gl::GlslProg		mFXAAShader;
     
     vector<Light_PS*>   mCubeLights;
+    
+    Vec2i               mFBOResolution;
+    int                 mShadowMapRes;
     
     enum
     {
@@ -168,11 +188,19 @@ public:
     vector<Light_PS*>* getCubeLightsRef(){ return &mCubeLights; };
     const int getNumCubeLights(){ return mCubeLights.size(); };
     
-    void setup(const boost::function<void(gl::GlslProg*)> renderShadowCastFunc, const boost::function<void(gl::GlslProg*)> renderObjFunc, MayaCamUI *cam )
+    void setup( const boost::function<void(gl::GlslProg*)> renderShadowCastFunc,
+               const boost::function<void(gl::GlslProg*)> renderObjFunc,
+               const boost::function<void()> renderOverlayFunc,
+               MayaCamUI *cam,
+               Vec2i     FBORes = Vec2i(512, 512),
+               int       shadowMapRes = 512)
     {
         fRenderShadowCastersFunc = renderShadowCastFunc;
         fRenderNotShadowCastersFunc = renderObjFunc;
+        fRenderOverlayFunc = renderOverlayFunc;
         mMayaCam = cam;
+        mFBOResolution = FBORes;
+        mShadowMapRes = shadowMapRes;
         
         glClearDepth(1.0f);
         glDisable(GL_CULL_FACE);
@@ -208,9 +236,11 @@ public:
     
     void update(){}
     
-    void addCubeLight(const Vec3f position, const Vec3f color, const bool castsShadows = false, const bool visible = true)
+    Light_PS* addCubeLight(const Vec3f position, const Color color, const bool castsShadows = false, const bool visible = true)
     {
-        mCubeLights.push_back( new Light_PS( position, color, castsShadows, visible ));
+        Light_PS *newLightP = new Light_PS( position, color, mShadowMapRes, castsShadows, visible );
+        mCubeLights.push_back( newLightP );
+        return newLightP;
     }
     
     void prepareDeferredScene()
@@ -244,7 +274,7 @@ public:
             (*currCube)->mCubeDepthFbo.bindFramebuffer();
             glDrawBuffer(GL_NONE);
             glReadBuffer(GL_NONE);
-            glViewport(0, 0, SHADOW_MAP_RESOLUTION, SHADOW_MAP_RESOLUTION);
+            glViewport(0, 0, mShadowMapRes, mShadowMapRes);
             
             glCullFace(GL_FRONT);
             
@@ -347,7 +377,7 @@ public:
         mDeferredShader.bind();
         mDeferredShader.uniform("diff_coeff", 1.0f);
         mDeferredShader.uniform("phong_coeff", 0.0f);
-        mDeferredShader.uniform("two_sided", 0.0f);
+        mDeferredShader.uniform("two_sided", 0.8f);
         
         if (fRenderShadowCastersFunc) {fRenderShadowCastersFunc(&mDeferredShader);}
         if (fRenderNotShadowCastersFunc) {fRenderNotShadowCastersFunc(&mDeferredShader);}
@@ -441,6 +471,23 @@ public:
             case SHOW_FINAL_VIEW: {
                 pingPongBlurSSAO();
                 
+                if(fRenderOverlayFunc) {
+                    gl::enableAlphaBlending();
+                    gl::disableDepthRead();
+                    
+                    mOverlayFBO.bindFramebuffer();
+                    glClearColor( 0.5f, 0.5f, 0.5f, 0.0f );
+                    glClearDepth(1.0f);
+                    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+                    gl::setMatrices(mMayaCam->getCamera());
+                    gl::setViewport( mOverlayFBO.getBounds() );
+                    
+                    fRenderOverlayFunc();
+                    
+                    mOverlayFBO.unbindFramebuffer();
+                    gl::enableDepthRead();
+                }
+                
 				mFinalSSFBO.bindFramebuffer();
 				glClearColor( 0.5f, 0.5f, 0.5f, 1 );
 				glClearDepth(1.0f);
@@ -459,6 +506,15 @@ public:
                 mLightGlowFBO.getTexture().unbind(2);
                 mAllShadowsFBO.getTexture().unbind(1);
                 mPingPongBlurV.getTexture().unbind(0);
+                
+                
+                if(fRenderOverlayFunc) {
+                    mOverlayFBO.getTexture().bind();
+                    gl::drawSolidRect( Rectf( 0, mFinalSSFBO.getHeight(), mFinalSSFBO.getWidth(), 0) ); //?? why do I have to draw this sideways??
+                    mOverlayFBO.getTexture().unbind();
+                    gl::disableAlphaBlending();
+                }
+                
 				mFinalSSFBO.unbindFramebuffer();
                 
 				mFinalSSFBO.getTexture().bind(0);
@@ -484,10 +540,10 @@ public:
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                 mDeferredFBO.getTexture(1).bind(0);
-                mAplhaToRBG.bind();
-                mAplhaToRBG.uniform("alphaTex", 0);
+                mAlphaToRBG.bind();
+                mAlphaToRBG.uniform("alphaTex", 0);
                 gl::drawSolidRect( Rectf( 0, getWindowHeight(), getWindowWidth(), 0) );
-                mAplhaToRBG.unbind();
+                mAlphaToRBG.unbind();
                 mDeferredFBO.getTexture(1).unbind(0);
             }
                 break;
@@ -563,8 +619,8 @@ public:
         for(vector<Light_PS*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube) {
             if ( shader != NULL ) {
                 shader->uniform("lightPos", mMayaCam->getCamera().getModelViewMatrix().transformPointAffine( (*currCube)->getPos() ) ); //pass light pos to pixel shader
-                shader->uniform("lightCol", (*currCube)->getCol()); //pass light color (magnitude is power) to pixel shader
-                shader->uniform("dist", (*currCube)->getDist()); //pass the light's area of effect radius to pixel shader
+                shader->uniform("lightCol", (*currCube)->getColor()); //pass light color (magnitude is power) to pixel shader
+                shader->uniform("dist", (*currCube)->getAOEDist()); //pass the light's area of effect radius to pixel shader
                 (*currCube)->renderCubeAOE(); //render the proxy shape
             }
             else {
@@ -628,7 +684,7 @@ public:
         mHBlurShader		= gl::GlslProg( loadResource( BLUR_H_VERT ), loadResource( BLUR_H_FRAG ) );
         mVBlurShader		= gl::GlslProg( loadResource( BLUR_V_VERT ), loadResource( BLUR_V_FRAG ) );
         mLightShader		= gl::GlslProg( loadResource( LIGHT_VERT ), loadResource( LIGHT_FRAG ) );
-        mAplhaToRBG         = gl::GlslProg( loadResource( ALPHA_RGB_VERT ), loadResource( ALPHA_RGB_FRAG ) );
+        mAlphaToRBG         = gl::GlslProg( loadResource( ALPHA_RGB_VERT ), loadResource( ALPHA_RGB_FRAG ) );
         mCubeShadowShader   = gl::GlslProg( loadResource( RES_SHADER_CUBESHADOW_VERT ), loadResource( RES_SHADER_CUBESHADOW_FRAG ) );
 		mFXAAShader			= gl::GlslProg( loadResource( RES_SHADER_FXAA_VERT ), loadResource( RES_SHADER_FXAA_FRAG ) );
     }
@@ -649,13 +705,14 @@ public:
         //format.setSamples( 4 ); // enable 4x antialiasing
         
         //init screen space render
-        mDeferredFBO	= gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, mtRFBO );
-        mLightGlowFBO   = gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
-        mPingPongBlurH	= gl::Fbo( FBO_RESOLUTION.x/2, FBO_RESOLUTION.y/2, format ); //don't need as high res on ssao as it will be blurred anyhow ...
-        mPingPongBlurV	= gl::Fbo( FBO_RESOLUTION.x/2, FBO_RESOLUTION.y/2, format );
-        mSSAOMap		= gl::Fbo( FBO_RESOLUTION.x/2, FBO_RESOLUTION.y/2, format );
-        mAllShadowsFBO  = gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
-        mFinalSSFBO		= gl::Fbo( FBO_RESOLUTION.x, FBO_RESOLUTION.y, format );
+        mDeferredFBO	= gl::Fbo( mFBOResolution.x,    mFBOResolution.y, mtRFBO );
+        mLightGlowFBO   = gl::Fbo( mFBOResolution.x,    mFBOResolution.y, format );
+        mPingPongBlurH	= gl::Fbo( mFBOResolution.x/2,  mFBOResolution.y/2, format ); //don't need as high res on ssao as it will be blurred anyhow ...
+        mPingPongBlurV	= gl::Fbo( mFBOResolution.x/2,  mFBOResolution.y/2, format );
+        mSSAOMap		= gl::Fbo( mFBOResolution.x/2,  mFBOResolution.y/2, format );
+        mAllShadowsFBO  = gl::Fbo( mFBOResolution.x,    mFBOResolution.y, format );
+        mFinalSSFBO		= gl::Fbo( mFBOResolution.x,    mFBOResolution.y, format );
+        mOverlayFBO     = gl::Fbo( mFBOResolution.x,    mFBOResolution.y, format );
         
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
