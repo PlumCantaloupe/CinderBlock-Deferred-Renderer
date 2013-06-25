@@ -15,13 +15,12 @@ Deferred rendering + shadow-mapping uses a huge amount if VRAM (one of its disad
 Inspiration and shader base from http://www.gamedev.net/page/resources/_/technical/graphics-programming-and-theory/image-space-lighting-r2644 and http://http.developer.nvidia.com/GPUGems2/gpugems2_chapter09.html
 
 Tips to get better framerates:
- - adjust app window size
- - lower FBO resolution
- - turn off number shadow-mapped lights by setting last parameter of LIGHT_PS constructor to false
- - reduce intensity/AOE of lights (adjust LIGHT_BRIGHTNESS_DEFAULT to be lower).
-
- - Tested on Macbook Pro 2010 Mountain Lion ~30fps (release)
- - Tested on HP620 Windows 7  ~ 170 fps (release)
+- adjust app window size
+- lower FBO resolution
+- turn off number shadow-mapped lights by setting last parameter of LIGHT_PS constructor to false
+- reduce intensity/AOE of lights (adjust LIGHT_BRIGHTNESS_DEFAULT to be lower).
+- Tested on Macbook Pro 2010 Mountain Lion ~30fps (release)
+- Tested on HP620 Windows 7  ~ 170 fps (release)
 
 Controls
 keys 0-9 toggle through deferred layers (depth, colour, normal, shadows etc.)
