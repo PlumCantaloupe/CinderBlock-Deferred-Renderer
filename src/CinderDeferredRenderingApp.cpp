@@ -141,7 +141,8 @@ void CinderDeferredRenderingApp::setup()
     fRenderShadowCastersFunc = boost::bind(&CinderDeferredRenderingApp::drawShadowCasters, this, boost::lambda::_1 );
     fRenderNotShadowCastersFunc = boost::bind(&CinderDeferredRenderingApp::drawNonShadowCasters, this,  boost::lambda::_1 );
     
-    //setting up deferred renderer ...
+    //NULL value represents the opportunity to a function pointer to an "overlay" method. Basically only basic textures can be used and it is overlayed onto the final scene.
+    //see example of such a function (from another project) commented out at the bottom of this class ...
     mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, NULL, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 );
     
     //have these cast point light shadows
@@ -356,6 +357,38 @@ void CinderDeferredRenderingApp::drawNonShadowCasters(gl::GlslProg* deferShader)
     glEnd();
 }
 
+//void InvestOttawa_2013App::drawOverlay() const
+//{
+//    if(mShowOverlays) {
+//        Vec3f camUp, camRight;
+//        mMayaCam.getCamera().getBillboardVectors(&camRight, &camUp);
+//        
+//        //Beam 1
+//        mFontTexture_Beam1.bind();
+//        gl::drawBillboard(Vec3f(-6.5,15.9,-8.5), Vec2f(mFontTexture_Beam1.getWidth()/20.0f , mFontTexture_Beam1.getHeight()/20.0f), 0, camRight, camUp);
+//        mFontTexture_Beam1.unbind();
+//        
+//        //Beam 2
+//        mFontTexture_Beam2.bind();
+//        gl::drawBillboard(Vec3f(-6.5,15.6,-3.5), Vec2f(mFontTexture_Beam1.getWidth()/20.0f , mFontTexture_Beam1.getHeight()/20.0f), 0, camRight, camUp);
+//        mFontTexture_Beam2.unbind();
+//        
+//        //Beam 3
+//        mFontTexture_Beam3.bind();
+//        gl::drawBillboard(Vec3f(-6.5,17.4,-14.7), Vec2f(mFontTexture_Beam1.getWidth()/20.0f , mFontTexture_Beam1.getHeight()/20.0f), 0, camRight, camUp);
+//        mFontTexture_Beam3.unbind();
+//        
+//        //Beam 4
+//        mFontTexture_Beam4.bind();
+//        gl::drawBillboard(Vec3f(-6.5,20.4,-1), Vec2f(mFontTexture_Beam1.getWidth()/20.0f , mFontTexture_Beam1.getHeight()/20.0f), 0, camRight, camUp);
+//        mFontTexture_Beam4.unbind();
+//        
+//        //Nucleus
+//        mFontTexture_Nucleus.bind();
+//        gl::drawBillboard(Vec3f(3.5f, 16.0f, -7.0f), Vec2f(mFontTexture_Beam1.getWidth()/20.0f , mFontTexture_Beam1.getHeight()/20.0f), 0, camRight, camUp);
+//        mFontTexture_Nucleus.unbind();
+//    }
+//}
 
 CINDER_APP_BASIC( CinderDeferredRenderingApp, RendererGl )
 
