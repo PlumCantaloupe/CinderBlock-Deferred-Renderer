@@ -10,12 +10,6 @@
 #ifndef CinderCubeMapShadows_CubeShadowMap_h
 #define CinderCubeMapShadows_CubeShadowMap_h
 
-#include "cinder/gl/gl.h"
-#include "cinder/gl/Texture.h"
-
-using ci::Surface8u;
-using boost::shared_ptr;
-
 class CubeShadowMap
 {
 public:
@@ -33,8 +27,7 @@ public:
     
 public:
 	//this should be overloaded or generalized to allow different types of texture inputs
-    CubeShadowMap()
-    {}
+    CubeShadowMap(){}
     
 	void setup( GLsizei texSize )
     {
@@ -64,14 +57,12 @@ public:
     
 	void bind( const int loc = 0)
     {
-        //glActiveTexture(GL_TEXTURE0 + loc );
         glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, textureObject);
     }
     
     void bindDepthFB( const int face )
     {
         glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, textureObject, 0);
-		//glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, tex_depth_cube, 0);
     }
 
 	void unbind( const int loc = 0 )

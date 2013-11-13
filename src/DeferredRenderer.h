@@ -133,9 +133,9 @@ public:
 class DeferredRenderer
 {
 public:
-    boost::function<void(gl::GlslProg*)> fRenderShadowCastersFunc;
-    boost::function<void(gl::GlslProg*)> fRenderNotShadowCastersFunc;
-    boost::function<void()> fRenderOverlayFunc;
+    std::function<void(gl::GlslProg*)> fRenderShadowCastersFunc;
+    std::function<void(gl::GlslProg*)> fRenderNotShadowCastersFunc;
+    std::function<void()> fRenderOverlayFunc;
     MayaCamUI              *mMayaCam;
     
     Matrix44f           mLightFaceViewMatrices[6];
@@ -188,12 +188,12 @@ public:
     vector<Light_PS*>* getCubeLightsRef(){ return &mCubeLights; };
     const int getNumCubeLights(){ return mCubeLights.size(); };
     
-    void setup( const boost::function<void(gl::GlslProg*)> renderShadowCastFunc,
-               const boost::function<void(gl::GlslProg*)> renderObjFunc,
-               const boost::function<void()> renderOverlayFunc,
-               MayaCamUI *cam,
-               Vec2i     FBORes = Vec2i(512, 512),
-               int       shadowMapRes = 512)
+    void setup( const std::function<void(gl::GlslProg*)> renderShadowCastFunc,
+                const std::function<void(gl::GlslProg*)> renderObjFunc,
+                const std::function<void()> renderOverlayFunc,
+                MayaCamUI *cam,
+                Vec2i     FBORes = Vec2i(512, 512),
+                int       shadowMapRes = 512)
     {
         fRenderShadowCastersFunc = renderShadowCastFunc;
         fRenderNotShadowCastersFunc = renderObjFunc;
@@ -697,7 +697,6 @@ public:
         mtRFBO.setDepthInternalFormat( GL_DEPTH_COMPONENT32 ); //want fbo to have precision depth map as well
         mtRFBO.setColorInternalFormat( GL_RGBA16F_ARB );
         mtRFBO.enableColorBuffer( true, 4 ); // create an FBO with four color attachments (basic diffuse, normal/depth view, attribute view, and position view)
-        //mtRFBO.setSamples( 4 ); // uncomment this to enable 4x antialiasing
         
         gl::Fbo::Format format;
         //format.setDepthInternalFormat( GL_DEPTH_COMPONENT32 );
