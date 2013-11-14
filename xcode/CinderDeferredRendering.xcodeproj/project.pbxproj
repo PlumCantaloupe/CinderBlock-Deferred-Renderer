@@ -85,6 +85,8 @@
 		DFD066751693417E0086C6D6 /* SSAO_glsl.vert */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = SSAO_glsl.vert; sourceTree = "<group>"; };
 		DFD066761693417E0086C6D6 /* SSAOL_glsl.frag */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = SSAOL_glsl.frag; sourceTree = "<group>"; };
 		DFD066781693417E0086C6D6 /* random.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = random.png; sourceTree = "<group>"; };
+		DFD6110F183437AB00531682 /* Fbo.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Fbo.h; path = ../src/Fbo.h; sourceTree = "<group>"; };
+		DFD61110183437B900531682 /* Shader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Shader.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -198,6 +200,8 @@
 			children = (
 				DFD06661169255550086C6D6 /* DeferredRenderer.h */,
 				DF970BB31683E35F0076C154 /* CubeShadowMap.h */,
+				DFD6110F183437AB00531682 /* Fbo.h */,
+				DFD61110183437B900531682 /* Shader.h */,
 			);
 			name = DeferredRenderer;
 			sourceTree = "<group>";

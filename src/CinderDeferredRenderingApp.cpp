@@ -149,10 +149,10 @@ void CinderDeferredRenderingApp::setup()
                 break;
         };
         
-        mDeferredRenderer.addCubeLight( Vec3f(Rand::randFloat(-1000.0f, 1000.0f),
-                                        Rand::randFloat(0.0f, 50.0f),
-                                        Rand::randFloat(-1000.0f, 1000.0f)),
-                                        randCol * LIGHT_BRIGHTNESS_DEFAULT);
+        mDeferredRenderer.addCubeLight( Vec3f(Rand::randFloat(-1000.0f, 1000.0f),Rand::randFloat(0.0f, 50.0f),Rand::randFloat(-1000.0f, 1000.0f)),
+                                        randCol * LIGHT_BRIGHTNESS_DEFAULT,
+                                        false,
+                                        true);
     }
     
     mCurrLightIndex = 0;
@@ -242,19 +242,23 @@ void CinderDeferredRenderingApp::keyDown( KeyEvent event )
         //move selected cube light
 		case KeyEvent::KEY_UP: {
             if ( mDeferredRenderer.getNumCubeLights() > 0) {
-                if(event.isShiftDown())
-                {mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->setPos( mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->getPos() + Vec3f(0.0f, lightMovInc, 0.0f ));}
-                else
-                {mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->setPos( mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->getPos() + Vec3f(0.0f, 0.0f, lightMovInc));}
+                if(event.isShiftDown()) {
+                    mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->setPos( mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->getPos() + Vec3f(0.0f, lightMovInc, 0.0f ));
+                }
+                else {
+                    mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->setPos( mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->getPos() + Vec3f(0.0f, 0.0f, lightMovInc));
+                }
             }
 		}
 			break;
 		case KeyEvent::KEY_DOWN: {
             if ( mDeferredRenderer.getNumCubeLights() > 0) {
-                if(event.isShiftDown())
-                {mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->setPos( mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->getPos() + Vec3f(0.0f, -lightMovInc, 0.0f ));}
-                else
-                {mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->setPos( mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->getPos() + Vec3f(0.0f, 0.0, -lightMovInc));}
+                if(event.isShiftDown()) {
+                    mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->setPos( mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->getPos() + Vec3f(0.0f, -lightMovInc, 0.0f ));
+                }
+                else {
+                    mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->setPos( mDeferredRenderer.getCubeLightsRef()->at(mCurrLightIndex)->getPos() + Vec3f(0.0f, 0.0, -lightMovInc));
+                }
             }
 		}
 			break;
