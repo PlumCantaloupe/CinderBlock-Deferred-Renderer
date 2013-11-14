@@ -76,12 +76,12 @@ public:
         transformMatBase[0] = mCubeSize;    transformMatBase[1] = 0.0f;         transformMatBase[2] = 0.0f;         transformMatBase[3] = 0.0f;
         transformMatBase[4] = 0.0f;         transformMatBase[5] = mCubeSize;    transformMatBase[6] = 0.0f;         transformMatBase[7] = 0.0f;
         transformMatBase[8] = 0.0f;         transformMatBase[9] = 0.0f;         transformMatBase[10] = mCubeSize;   transformMatBase[11] = 0.0f;
-        transformMatBase[12] = pos.x;        transformMatBase[13] = pos.y;        transformMatBase[14] = pos.z;        transformMatBase[15] = 1.0f;
+        transformMatBase[12] = pos.x;       transformMatBase[13] = pos.y;       transformMatBase[14] = pos.z;       transformMatBase[15] = 1.0f;
         
         transformMatAOE[0] = mAOEDist;      transformMatAOE[1] = 0.0f;          transformMatAOE[2] = 0.0f;          transformMatAOE[3] = 0.0f;
         transformMatAOE[4] = 0.0f;          transformMatAOE[5] = mAOEDist;      transformMatAOE[6] = 0.0f;          transformMatAOE[7] = 0.0f;
         transformMatAOE[8] = 0.0f;          transformMatAOE[9] = 0.0f;          transformMatAOE[10] = mAOEDist;     transformMatAOE[11] = 0.0f;
-        transformMatAOE[12] = pos.x;         transformMatAOE[13] = pos.y;         transformMatAOE[14] = pos.z;         transformMatAOE[15] = 1.0f;
+        transformMatAOE[12] = pos.x;        transformMatAOE[13] = pos.y;        transformMatAOE[14] = pos.z;        transformMatAOE[15] = 1.0f;
     }
     
     void setUpShadowStuff()
@@ -99,8 +99,8 @@ public:
         mCubeDepthFbo   = gl::Fbo( mShadowMapRes, mShadowMapRes, formatShadow);
         
         gl::Fbo::Format format;
-        //format.setDepthInternalFormat( GL_DEPTH_COMPONENT32 );
-        format.setColorInternalFormat( GL_RGBA16F_ARB );
+        format.setDepthInternalFormat( GL_DEPTH_COMPONENT24 );
+        format.setColorInternalFormat( GL_RGBA8 );
         //format.setSamples( 4 ); // enable 4x antialiasing
         mShadowsFbo	= gl::Fbo( mShadowMapRes, mShadowMapRes, format );
     }
@@ -760,7 +760,8 @@ public:
             Vec3f(c.x+1.0f*sx,c.y+1.0f*sy,c.z+1.0f*sz),     Vec3f(c.x+-1.0f*sx,c.y+1.0f*sy,c.z+1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+1.0f*sz),	Vec3f(c.x+1.0f*sx,c.y+-1.0f*sy,c.z+1.0f*sz),	// +Z
             Vec3f(c.x+-1.0f*sx,c.y+1.0f*sy,c.z+1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+1.0f*sz),	// -X
             Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+1.0f*sx,c.y+-1.0f*sy,c.z+1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+1.0f*sz),	// -Y
-            Vec3f(c.x+1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz)};	// -Z
+            Vec3f(c.x+1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz)     // -Z
+        };
         
         
         Vec3f normals[24]={ Vec3f(1,0,0),   Vec3f(1,0,0),   Vec3f(1,0,0),   Vec3f(1,0,0),
@@ -768,26 +769,22 @@ public:
                             Vec3f(0,0,1),	Vec3f(0,0,1),	Vec3f(0,0,1),	Vec3f(0,0,1),
                             Vec3f(-1,0,0),	Vec3f(-1,0,0),	Vec3f(-1,0,0),	Vec3f(-1,0,0),
                             Vec3f(0,-1,0),	Vec3f(0,-1,0),  Vec3f(0,-1,0),  Vec3f(0,-1,0),
-                            Vec3f(0,0,-1),	Vec3f(0,0,-1),	Vec3f(0,0,-1),	Vec3f(0,0,-1)};
+                            Vec3f(0,0,-1),	Vec3f(0,0,-1),	Vec3f(0,0,-1),	Vec3f(0,0,-1)
+                        };
         
         Color colors[24]={	Color::white(), Color::white(), Color::white(), Color::white(),
                             Color::white(), Color::white(), Color::white(), Color::white(),
                             Color::white(), Color::white(), Color::white(), Color::white(),
-                            Color::white(), Color::white(), Color::white(), Color::white()};
-//        
-//        static GLfloat texs[24*2]={	0,1,	1,1,	1,0,	0,0,
-//            1,1,	1,0,	0,0,	0,1,
-//            0,1,	1,1,	1,0,	0,0,
-//            1,1,	1,0,	0,0,	0,1,
-//            1,0,	0,0,	0,1,	1,1,
-//            1,0,	0,0,	0,1,	1,1 };
+                            Color::white(), Color::white(), Color::white(), Color::white()
+                        };
         
-        uint32_t indices[6*6] ={    0, 1, 2, 0, 2, 3,
+        uint32_t indices[6*6] = {   0, 1, 2, 0, 2, 3,
                                     4, 5, 6, 4, 6, 7,
                                     8, 9,10, 8, 10,11,
                                     12,13,14,12,14,15,
                                     16,17,18,16,18,19,
-                                    20,21,22,20,22,23 };
+                                    20,21,22,20,22,23
+                                };
         
         gl::VboMesh::Layout layout;
         layout.setStaticPositions();
