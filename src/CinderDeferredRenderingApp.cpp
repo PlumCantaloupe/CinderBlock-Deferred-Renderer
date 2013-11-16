@@ -112,8 +112,8 @@ void CinderDeferredRenderingApp::setup()
     //create functions pointers to send to deferred renderer
     std::function<void(gl::GlslProg*)> fRenderShadowCastersFunc;
     std::function<void(gl::GlslProg*)> fRenderNotShadowCastersFunc;
-    fRenderShadowCastersFunc = std::bind(&CinderDeferredRenderingApp::drawShadowCasters, this, std::tr1::placeholders::_1 );
-    fRenderNotShadowCastersFunc = std::bind(&CinderDeferredRenderingApp::drawNonShadowCasters, this,  std::tr1::placeholders::_1 );
+    fRenderShadowCastersFunc = std::bind(&CinderDeferredRenderingApp::drawShadowCasters, this, std::placeholders::_1 );
+    fRenderNotShadowCastersFunc = std::bind(&CinderDeferredRenderingApp::drawNonShadowCasters, this,  std::placeholders::_1 );
     
     //NULL value represents the opportunity to a function pointer to an "overlay" method. Basically only basic textures can be used and it is overlayed onto the final scene.
     //see example of such a function (from another project) commented out at the bottom of this class ...
@@ -167,8 +167,9 @@ void CinderDeferredRenderingApp::draw()
 {
     mDeferredRenderer.renderFullScreenQuad(RENDER_MODE);
     
-	if (mShowParams)
-		params::InterfaceGl::draw();
+	if (mShowParams) {
+		mParams.draw();
+    }
 }
 
 void CinderDeferredRenderingApp::mouseDown( MouseEvent event )

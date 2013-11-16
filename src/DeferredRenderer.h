@@ -6,6 +6,15 @@
 //
 //
 
+/*
+ TODO:  
+        - Want framework independence
+            - VboMesh Class
+            - Fbo Class
+            - Shader Class
+            - Conversion function (e.g. Vec3f to float[3] and vice versa)
+ */
+
 #ifndef CinderDeferredRendering_DeferredRenderer_h
 #define CinderDeferredRendering_DeferredRenderer_h
 
