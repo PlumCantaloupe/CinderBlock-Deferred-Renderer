@@ -50,6 +50,7 @@ public:
     void drawShadowCasters(gl::GlslProg* deferShader) const;
     void drawNonShadowCasters(gl::GlslProg* deferShader) const;
     void drawOverlay() const;
+    void drawDepthParticles() const;
     
 protected:
     int RENDER_MODE;
@@ -116,14 +117,18 @@ void CinderDeferredRenderingApp::setup()
     std::function<void(gl::GlslProg*)> fRenderShadowCastersFunc;
     std::function<void(gl::GlslProg*)> fRenderNotShadowCastersFunc;
     std::function<void()> fRenderOverlayFunc;
+    std::function<void()> fRenderParticlesFunc;
     fRenderShadowCastersFunc = std::bind(&CinderDeferredRenderingApp::drawShadowCasters, this, std::placeholders::_1 );
     fRenderNotShadowCastersFunc = std::bind(&CinderDeferredRenderingApp::drawNonShadowCasters, this,  std::placeholders::_1 );
     fRenderOverlayFunc = std::bind(&CinderDeferredRenderingApp::drawOverlay, this ); //drawOverlay function pointer
+    fRenderParticlesFunc = std::bind(&CinderDeferredRenderingApp::drawDepthParticles, this ); //an overlay that also uses depth from rendered screen for occulsions (as opposed to overlay func which has no occlusions enabled)
     
     //NULL value represents the opportunity to a function pointer to an "overlay" method. Basically only basic textures can be used and it is overlayed onto the final scene.
     //see example of such a function (from another project) commented out at the bottom of this class ...
-    //mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, fRenderOverlayFunc, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 );
-    mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, NULL, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 ); //not using overlay function for performance
+    
+    mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, NULL, NULL, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 ); //no overlay or "particles"
+    //mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, fRenderOverlayFunc, NULL, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 ); //overlay enabled
+    //mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, NULL, NULL, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 ); //overlay and "particles" enabled
     
     //have these cast point light shadows
     mDeferredRenderer.addCubeLight(    Vec3f(-2.0f, 4.0f, 6.0f),      Color(0.10f, 0.69f, 0.93f) * LIGHT_BRIGHTNESS_DEFAULT, true);      //blue
@@ -302,7 +307,7 @@ void CinderDeferredRenderingApp::drawShadowCasters(gl::GlslProg* deferShader) co
         mEarthTex.bind(0);
     }
     
-    glColor3ub(255,0,0);
+    glColor3ub(255,255,255);
     gl::drawSphere( Vec3f(-1.0, 0.0,-1.0), 1.0f, 30 );
     
     if(deferShader != NULL) {
@@ -352,7 +357,7 @@ void CinderDeferredRenderingApp::drawOverlay() const
 	layout1.clear( ColorA( 1.0f, 1.0f, 1.0f, 0.0f ) );
 	layout1.setFont( Font( "Arial", 34 ) );
 	layout1.setColor( ColorA( 255.0f/255.0f, 255.0f/255.0f, 8.0f/255.0f, 1.0f ) );
-	layout1.addLine( to_string(getAverageFps()) );
+	layout1.addLine( to_string(getAverageFps()) ); //to_string is a c++11 function for conversions
 	Surface8u rendered1 = layout1.render( true, false );
     gl::Texture fontTexture_FR = gl::Texture( rendered1 );
     
@@ -360,6 +365,17 @@ void CinderDeferredRenderingApp::drawOverlay() const
     fontTexture_FR.bind();
     gl::drawBillboard(Vec3f(-3.0f, 7.0f, 20.0f), Vec2f(fontTexture_FR.getWidth()/20.0f , fontTexture_FR.getHeight()/20.0f), 0, camRight, camUp);
     fontTexture_FR.unbind();
+}
+
+void CinderDeferredRenderingApp::drawDepthParticles() const
+{
+    //this where typically a particle engine would go. For now lets just draw some "earths"
+    mEarthTex.bind();
+    gl::drawCube(Vec3f(3.0f, 2.0f, 8.0f), Vec3f(3.0f, 3.0f, 3.0f));
+    gl::drawCube(Vec3f(1.0f, 5.0f, -3.0f), Vec3f(3.0f, 3.0f, 3.0f));
+    gl::drawCube(Vec3f(-3.0f, 3.0f, 4.0f), Vec3f(3.0f, 3.0f, 3.0f));
+    gl::drawCube(Vec3f(-2.0f, 4.0f, 7.0f), Vec3f(3.0f, 3.0f, 3.0f));
+    mEarthTex.unbind();
 }
 
 CINDER_APP_BASIC( CinderDeferredRenderingApp, RendererGl )

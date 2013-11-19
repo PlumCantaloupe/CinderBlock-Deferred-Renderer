@@ -174,6 +174,7 @@ public:
     std::function<void(gl::GlslProg*)> fRenderShadowCastersFunc;
     std::function<void(gl::GlslProg*)> fRenderNotShadowCastersFunc;
     std::function<void()> fRenderOverlayFunc;
+    std::function<void()> fRenderParticlesFunc;
     MayaCamUI              *mMayaCam;
     
     Matrix44f           mLightFaceViewMatrices[6];
@@ -188,6 +189,7 @@ public:
     gl::Fbo				mAllShadowsFBO;
 	gl::Fbo				mFinalSSFBO;
     gl::Fbo				mOverlayFBO;
+    gl::Fbo				mParticlesFBO;
     
 	gl::GlslProg		mCubeShadowShader;
 	
@@ -231,6 +233,7 @@ public:
     void setup( const std::function<void(gl::GlslProg*)> renderShadowCastFunc,
                 const std::function<void(gl::GlslProg*)> renderObjFunc,
                 const std::function<void()> renderOverlayFunc,
+                const std::function<void()> renderParticlesFunc,
                 MayaCamUI *cam,
                 Vec2i     FBORes = Vec2i(512, 512),
                 int       shadowMapRes = 512)
@@ -241,6 +244,7 @@ public:
         fRenderShadowCastersFunc = renderShadowCastFunc;
         fRenderNotShadowCastersFunc = renderObjFunc;
         fRenderOverlayFunc = renderOverlayFunc;
+        fRenderParticlesFunc = renderParticlesFunc;
         mMayaCam = cam;
         mFBOResolution = FBORes;
         mShadowMapRes = shadowMapRes;
@@ -514,9 +518,12 @@ public:
             case SHOW_FINAL_VIEW: {
                 pingPongBlurSSAO();
                 
+                if(fRenderOverlayFunc || fRenderParticlesFunc) {
+                    gl::disableDepthRead();
+                }
+                
                 if(fRenderOverlayFunc) {
                     gl::enableAlphaBlending();
-                    gl::disableDepthRead();
                     
                     mOverlayFBO.bindFramebuffer();
                     glClearColor( 0.5f, 0.5f, 0.5f, 0.0f );
@@ -528,7 +535,43 @@ public:
                     fRenderOverlayFunc();
                     
                     mOverlayFBO.unbindFramebuffer();
+                }
+                
+                if(fRenderParticlesFunc) {
+//                    gl::enableDepthRead();
+//                    gl::enableDepthWrite();
+//                    //now blit/copy depth buffer from deferred to "particles"
+//                    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mDeferredFBO.getId());
+//                    glBindFramebuffer(GL_READ_FRAMEBUFFER, mParticlesFBO.getId());
+//
+//                    glReadBuffer( GL_DEPTH_ATTACHMENT );
+//                    glDrawBuffer( GL_DEPTH_ATTACHMENT );
+//
+//                    glBlitFramebuffer(  0, 0, mDeferredFBO.getWidth(), mDeferredFBO.getHeight(),
+//                                        0, 0, mParticlesFBO.getWidth(), mParticlesFBO.getHeight(),
+//                                        GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+//                    
+//                    glBindFramebuffer( GL_READ_FRAMEBUFFER, 0 );
+//                    glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
+                    
+                    //draw to FBO
+                    gl::enableAdditiveBlending();
+                    
+                    mParticlesFBO.bindFramebuffer();
+                    glClearColor( 0.5f, 0.5f, 0.5f, 0.0f );
+                    glClearDepth(1.0f);
+                    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+                    gl::setMatrices(mMayaCam->getCamera());
+                    gl::setViewport( mParticlesFBO.getBounds() );
+                    
+                    fRenderParticlesFunc();
+                    
+                    mParticlesFBO.unbindFramebuffer();
+                }
+                
+                if(fRenderOverlayFunc || fRenderParticlesFunc) {
                     gl::enableDepthRead();
+                    gl::disableAlphaBlending();
                 }
                 
 				mFinalSSFBO.bindFramebuffer();
@@ -550,11 +593,23 @@ public:
                 mAllShadowsFBO.getTexture().unbind(1);
                 mPingPongBlurV.getTexture().unbind(0);
                 
+                if(fRenderOverlayFunc || fRenderParticlesFunc) {
+                    gl::enableAlphaBlending();
+                }
                 
                 if(fRenderOverlayFunc) {
                     mOverlayFBO.getTexture().bind();
                     gl::drawSolidRect( Rectf( 0, mFinalSSFBO.getHeight(), mFinalSSFBO.getWidth(), 0) ); //?? why do I have to draw this sideways??
                     mOverlayFBO.getTexture().unbind();
+                }
+                
+                if(fRenderParticlesFunc) {
+                    mParticlesFBO.getTexture().bind();
+                    gl::drawSolidRect( Rectf( 0, mFinalSSFBO.getHeight(), mFinalSSFBO.getWidth(), 0) ); //?? why do I have to draw this sideways??
+                    mParticlesFBO.getTexture().unbind();
+                }
+                
+                if(fRenderOverlayFunc || fRenderParticlesFunc) {
                     gl::disableAlphaBlending();
                 }
                 
@@ -752,7 +807,14 @@ public:
         mSSAOMap		= gl::Fbo( mFBOResolution.x/2,  mFBOResolution.y/2, basicFormat );
         mAllShadowsFBO  = gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   basicFormat );
         mFinalSSFBO		= gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   basicFormat );
-        mOverlayFBO     = gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   basicFormat );
+        
+        if(fRenderOverlayFunc) {
+            mOverlayFBO     = gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   basicFormat );
+        }
+        
+        if(fRenderParticlesFunc) {
+            mParticlesFBO   = gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   basicFormat );
+        }
         
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
@@ -772,19 +834,12 @@ public:
             Vec3f(c.x+1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz)     // -Z
         };
         
-        
         Vec3f normals[24]={ Vec3f(1,0,0),   Vec3f(1,0,0),   Vec3f(1,0,0),   Vec3f(1,0,0),
                             Vec3f(0,1,0),	Vec3f(0,1,0),	Vec3f(0,1,0),	Vec3f(0,1,0),
                             Vec3f(0,0,1),	Vec3f(0,0,1),	Vec3f(0,0,1),	Vec3f(0,0,1),
                             Vec3f(-1,0,0),	Vec3f(-1,0,0),	Vec3f(-1,0,0),	Vec3f(-1,0,0),
                             Vec3f(0,-1,0),	Vec3f(0,-1,0),  Vec3f(0,-1,0),  Vec3f(0,-1,0),
                             Vec3f(0,0,-1),	Vec3f(0,0,-1),	Vec3f(0,0,-1),	Vec3f(0,0,-1)
-                        };
-        
-        Color colors[24]={	Color::white(), Color::white(), Color::white(), Color::white(),
-                            Color::white(), Color::white(), Color::white(), Color::white(),
-                            Color::white(), Color::white(), Color::white(), Color::white(),
-                            Color::white(), Color::white(), Color::white(), Color::white()
                         };
         
         uint32_t indices[6*6] = {   0, 1, 2, 0, 2, 3,
@@ -799,12 +854,10 @@ public:
         layout.setStaticPositions();
         layout.setStaticIndices();
         layout.setStaticNormals();
-        layout.setStaticColorsRGB();
         
         *vboMesh = gl::VboMesh( 24, 36, layout, GL_TRIANGLES );
         vboMesh->bufferPositions(std::vector<Vec3f>(vertices, vertices + sizeof(vertices)/sizeof(vertices[0])));
         vboMesh->bufferNormals(std::vector<Vec3f>(normals, normals + sizeof(normals)/sizeof(normals[0])));
-        vboMesh->bufferColorsRGB(std::vector<Color>(colors, colors + sizeof(colors)/sizeof(colors[0])));
         vboMesh->bufferIndices(std::vector<uint32_t>(indices, indices + sizeof(indices)/sizeof(indices[0])));
     }
     
