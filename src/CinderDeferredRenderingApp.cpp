@@ -14,6 +14,8 @@
 #include "cinder/MayaCamUI.h"
 #include "cinder/params/Params.h"
 #include "cinder/Rand.h"
+#include "cinder/Text.h"
+#include "cinder/Font.h"
 
 #include "DeferredRenderer.h"
 
@@ -47,6 +49,7 @@ public:
     
     void drawShadowCasters(gl::GlslProg* deferShader) const;
     void drawNonShadowCasters(gl::GlslProg* deferShader) const;
+    void drawOverlay() const;
     
 protected:
     int RENDER_MODE;
@@ -112,12 +115,15 @@ void CinderDeferredRenderingApp::setup()
     //create functions pointers to send to deferred renderer
     std::function<void(gl::GlslProg*)> fRenderShadowCastersFunc;
     std::function<void(gl::GlslProg*)> fRenderNotShadowCastersFunc;
+    std::function<void()> fRenderOverlayFunc;
     fRenderShadowCastersFunc = std::bind(&CinderDeferredRenderingApp::drawShadowCasters, this, std::placeholders::_1 );
     fRenderNotShadowCastersFunc = std::bind(&CinderDeferredRenderingApp::drawNonShadowCasters, this,  std::placeholders::_1 );
+    fRenderOverlayFunc = std::bind(&CinderDeferredRenderingApp::drawOverlay, this ); //drawOverlay function pointer
     
     //NULL value represents the opportunity to a function pointer to an "overlay" method. Basically only basic textures can be used and it is overlayed onto the final scene.
     //see example of such a function (from another project) commented out at the bottom of this class ...
-    mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, NULL, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 );
+    //mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, fRenderOverlayFunc, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 );
+    mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, NULL, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 ); //not using overlay function for performance
     
     //have these cast point light shadows
     mDeferredRenderer.addCubeLight(    Vec3f(-2.0f, 4.0f, 6.0f),      Color(0.10f, 0.69f, 0.93f) * LIGHT_BRIGHTNESS_DEFAULT, true);      //blue
@@ -336,38 +342,25 @@ void CinderDeferredRenderingApp::drawNonShadowCasters(gl::GlslProg* deferShader)
     glEnd();
 }
 
-//void InvestOttawa_2013App::drawOverlay() const
-//{
-//    if(mShowOverlays) {
-//        Vec3f camUp, camRight;
-//        mMayaCam.getCamera().getBillboardVectors(&camRight, &camUp);
-//        
-//        //Beam 1
-//        mFontTexture_Beam1.bind();
-//        gl::drawBillboard(Vec3f(-6.5,15.9,-8.5), Vec2f(mFontTexture_Beam1.getWidth()/20.0f , mFontTexture_Beam1.getHeight()/20.0f), 0, camRight, camUp);
-//        mFontTexture_Beam1.unbind();
-//        
-//        //Beam 2
-//        mFontTexture_Beam2.bind();
-//        gl::drawBillboard(Vec3f(-6.5,15.6,-3.5), Vec2f(mFontTexture_Beam1.getWidth()/20.0f , mFontTexture_Beam1.getHeight()/20.0f), 0, camRight, camUp);
-//        mFontTexture_Beam2.unbind();
-//        
-//        //Beam 3
-//        mFontTexture_Beam3.bind();
-//        gl::drawBillboard(Vec3f(-6.5,17.4,-14.7), Vec2f(mFontTexture_Beam1.getWidth()/20.0f , mFontTexture_Beam1.getHeight()/20.0f), 0, camRight, camUp);
-//        mFontTexture_Beam3.unbind();
-//        
-//        //Beam 4
-//        mFontTexture_Beam4.bind();
-//        gl::drawBillboard(Vec3f(-6.5,20.4,-1), Vec2f(mFontTexture_Beam1.getWidth()/20.0f , mFontTexture_Beam1.getHeight()/20.0f), 0, camRight, camUp);
-//        mFontTexture_Beam4.unbind();
-//        
-//        //Nucleus
-//        mFontTexture_Nucleus.bind();
-//        gl::drawBillboard(Vec3f(3.5f, 16.0f, -7.0f), Vec2f(mFontTexture_Beam1.getWidth()/20.0f , mFontTexture_Beam1.getHeight()/20.0f), 0, camRight, camUp);
-//        mFontTexture_Nucleus.unbind();
-//    }
-//}
+void CinderDeferredRenderingApp::drawOverlay() const
+{
+    Vec3f camUp, camRight;
+    mMayaCam.getCamera().getBillboardVectors(&camRight, &camUp);
+    
+    //create text labels
+    TextLayout layout1;
+	layout1.clear( ColorA( 1.0f, 1.0f, 1.0f, 0.0f ) );
+	layout1.setFont( Font( "Arial", 34 ) );
+	layout1.setColor( ColorA( 255.0f/255.0f, 255.0f/255.0f, 8.0f/255.0f, 1.0f ) );
+	layout1.addLine( to_string(getAverageFps()) );
+	Surface8u rendered1 = layout1.render( true, false );
+    gl::Texture fontTexture_FR = gl::Texture( rendered1 );
+    
+    //draw framerate
+    fontTexture_FR.bind();
+    gl::drawBillboard(Vec3f(-3.0f, 7.0f, 20.0f), Vec2f(fontTexture_FR.getWidth()/20.0f , fontTexture_FR.getHeight()/20.0f), 0, camRight, camUp);
+    fontTexture_FR.unbind();
+}
 
 CINDER_APP_BASIC( CinderDeferredRenderingApp, RendererGl )
 
