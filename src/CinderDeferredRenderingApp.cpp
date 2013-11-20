@@ -126,9 +126,9 @@ void CinderDeferredRenderingApp::setup()
     //NULL value represents the opportunity to a function pointer to an "overlay" method. Basically only basic textures can be used and it is overlayed onto the final scene.
     //see example of such a function (from another project) commented out at the bottom of this class ...
     
-    mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, NULL, NULL, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 ); //no overlay or "particles"
+    //mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, NULL, NULL, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 ); //no overlay or "particles"
     //mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, fRenderOverlayFunc, NULL, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 ); //overlay enabled
-    //mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, NULL, NULL, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 ); //overlay and "particles" enabled
+    mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, fRenderOverlayFunc, fRenderParticlesFunc, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 ); //overlay and "particles" enabled -- not working yet
     
     //have these cast point light shadows
     mDeferredRenderer.addCubeLight(    Vec3f(-2.0f, 4.0f, 6.0f),      Color(0.10f, 0.69f, 0.93f) * LIGHT_BRIGHTNESS_DEFAULT, true);      //blue
@@ -369,13 +369,17 @@ void CinderDeferredRenderingApp::drawOverlay() const
 
 void CinderDeferredRenderingApp::drawDepthParticles() const
 {
+    gl::enableAdditiveBlending();
+    
     //this where typically a particle engine would go. For now lets just draw some "earths"
+    glColor4ub(255, 255, 255, 160);
     mEarthTex.bind();
     gl::drawCube(Vec3f(3.0f, 2.0f, 8.0f), Vec3f(3.0f, 3.0f, 3.0f));
     gl::drawCube(Vec3f(1.0f, 5.0f, -3.0f), Vec3f(3.0f, 3.0f, 3.0f));
     gl::drawCube(Vec3f(-3.0f, 3.0f, 4.0f), Vec3f(3.0f, 3.0f, 3.0f));
     gl::drawCube(Vec3f(-2.0f, 4.0f, 7.0f), Vec3f(3.0f, 3.0f, 3.0f));
     mEarthTex.unbind();
+    glColor4ub(255, 255, 255, 255);
 }
 
 CINDER_APP_BASIC( CinderDeferredRenderingApp, RendererGl )

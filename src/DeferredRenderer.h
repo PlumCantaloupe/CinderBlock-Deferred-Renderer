@@ -519,7 +519,7 @@ public:
                 pingPongBlurSSAO();
                 
                 if(fRenderOverlayFunc || fRenderParticlesFunc) {
-                    gl::disableDepthRead();
+                    glDisable(GL_DEPTH_TEST);
                 }
                 
                 if(fRenderOverlayFunc) {
@@ -538,39 +538,38 @@ public:
                 }
                 
                 if(fRenderParticlesFunc) {
-//                    gl::enableDepthRead();
-//                    gl::enableDepthWrite();
-//                    //now blit/copy depth buffer from deferred to "particles"
-//                    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mDeferredFBO.getId());
-//                    glBindFramebuffer(GL_READ_FRAMEBUFFER, mParticlesFBO.getId());
-//
-//                    glReadBuffer( GL_DEPTH_ATTACHMENT );
-//                    glDrawBuffer( GL_DEPTH_ATTACHMENT );
-//
-//                    glBlitFramebuffer(  0, 0, mDeferredFBO.getWidth(), mDeferredFBO.getHeight(),
-//                                        0, 0, mParticlesFBO.getWidth(), mParticlesFBO.getHeight(),
-//                                        GL_DEPTH_BUFFER_BIT, GL_NEAREST );
-//                    
-//                    glBindFramebuffer( GL_READ_FRAMEBUFFER, 0 );
-//                    glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
+                    //copy deferred depth buffer to "particles" FBO so we can have transparency + occlusion
+                    glEnable(GL_DEPTH_TEST);    //want to read depth buffer
+                    glDepthMask(GL_TRUE);       //want to write to depth buffer
+                    glBindFramebuffer(GL_READ_FRAMEBUFFER, mDeferredFBO.getId());
+                    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, mParticlesFBO.getId());
+                    
+                    //glReadBuffer(GL_DEPTH_ATTACHMENT);
+                    //glDrawBuffer(GL_DEPTH_ATTACHMENT);
+                    
+                    glBlitFramebuffer(  0, 0, mDeferredFBO.getWidth(), mDeferredFBO.getHeight(),
+                                        0, 0, mParticlesFBO.getWidth(), mParticlesFBO.getHeight(),
+                                        GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+                    
+                    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+                    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
                     
                     //draw to FBO
-                    gl::enableAdditiveBlending();
-                    
+                    glDepthMask(GL_FALSE);  //don't want to write to depth buffer / prevent overriding
                     mParticlesFBO.bindFramebuffer();
                     glClearColor( 0.5f, 0.5f, 0.5f, 0.0f );
-                    glClearDepth(1.0f);
-                    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+                    glClear( GL_COLOR_BUFFER_BIT );
                     gl::setMatrices(mMayaCam->getCamera());
                     gl::setViewport( mParticlesFBO.getBounds() );
                     
                     fRenderParticlesFunc();
                     
                     mParticlesFBO.unbindFramebuffer();
+                    glDepthMask(GL_TRUE);
                 }
                 
                 if(fRenderOverlayFunc || fRenderParticlesFunc) {
-                    gl::enableDepthRead();
+                    glEnable(GL_DEPTH_TEST);
                     gl::disableAlphaBlending();
                 }
                 
@@ -597,16 +596,16 @@ public:
                     gl::enableAlphaBlending();
                 }
                 
+                if(fRenderParticlesFunc) {
+                    mParticlesFBO.getTexture().bind(0);
+                    gl::drawSolidRect( Rectf( 0, mFinalSSFBO.getHeight(), mFinalSSFBO.getWidth(), 0) ); //?? why do I have to draw this sideways??
+                    mParticlesFBO.getTexture().unbind(0);
+                }
+                
                 if(fRenderOverlayFunc) {
                     mOverlayFBO.getTexture().bind();
                     gl::drawSolidRect( Rectf( 0, mFinalSSFBO.getHeight(), mFinalSSFBO.getWidth(), 0) ); //?? why do I have to draw this sideways??
                     mOverlayFBO.getTexture().unbind();
-                }
-                
-                if(fRenderParticlesFunc) {
-                    mParticlesFBO.getTexture().bind();
-                    gl::drawSolidRect( Rectf( 0, mFinalSSFBO.getHeight(), mFinalSSFBO.getWidth(), 0) ); //?? why do I have to draw this sideways??
-                    mParticlesFBO.getTexture().unbind();
                 }
                 
                 if(fRenderOverlayFunc || fRenderParticlesFunc) {
@@ -799,6 +798,10 @@ public:
         gl::Fbo::Format basicFormat;
         basicFormat.enableDepthBuffer(false); //don't need depth "layers"
         
+        gl::Fbo::Format basicDepthFormat;
+        basicDepthFormat.enableDepthBuffer(true); //don't need depth "layers"
+        basicDepthFormat.setDepthInternalFormat( GL_DEPTH_COMPONENT24 ); //want fbo to have same precision as deferred
+        
         //init screen space render
         mDeferredFBO	= gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   deferredFBO );
         mLightGlowFBO   = gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   basicFormat );
@@ -813,7 +816,7 @@ public:
         }
         
         if(fRenderParticlesFunc) {
-            mParticlesFBO   = gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   basicFormat );
+            mParticlesFBO   = gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   basicDepthFormat );
         }
         
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
