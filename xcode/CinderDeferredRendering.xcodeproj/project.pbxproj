@@ -39,7 +39,6 @@
 		DFD06699169341E40086C6D6 /* Light_glsl.vert in Resources */ = {isa = PBXBuildFile; fileRef = DFD066731693417E0086C6D6 /* Light_glsl.vert */; };
 		DFD0669A169341E40086C6D6 /* SSAO_glsl.frag in Resources */ = {isa = PBXBuildFile; fileRef = DFD066741693417E0086C6D6 /* SSAO_glsl.frag */; };
 		DFD0669B169341E40086C6D6 /* SSAO_glsl.vert in Resources */ = {isa = PBXBuildFile; fileRef = DFD066751693417E0086C6D6 /* SSAO_glsl.vert */; };
-		DFD0669C169341E40086C6D6 /* SSAOL_glsl.frag in Resources */ = {isa = PBXBuildFile; fileRef = DFD066761693417E0086C6D6 /* SSAOL_glsl.frag */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -83,7 +82,6 @@
 		DFD066731693417E0086C6D6 /* Light_glsl.vert */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = Light_glsl.vert; sourceTree = "<group>"; };
 		DFD066741693417E0086C6D6 /* SSAO_glsl.frag */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = SSAO_glsl.frag; sourceTree = "<group>"; };
 		DFD066751693417E0086C6D6 /* SSAO_glsl.vert */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = SSAO_glsl.vert; sourceTree = "<group>"; };
-		DFD066761693417E0086C6D6 /* SSAOL_glsl.frag */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = SSAOL_glsl.frag; sourceTree = "<group>"; };
 		DFD066781693417E0086C6D6 /* random.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = random.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -233,7 +231,6 @@
 				DFD066731693417E0086C6D6 /* Light_glsl.vert */,
 				DFD066741693417E0086C6D6 /* SSAO_glsl.frag */,
 				DFD066751693417E0086C6D6 /* SSAO_glsl.vert */,
-				DFD066761693417E0086C6D6 /* SSAOL_glsl.frag */,
 			);
 			path = shaders;
 			sourceTree = "<group>";
@@ -314,7 +311,6 @@
 				DFD06699169341E40086C6D6 /* Light_glsl.vert in Resources */,
 				DFD0669A169341E40086C6D6 /* SSAO_glsl.frag in Resources */,
 				DFD0669B169341E40086C6D6 /* SSAO_glsl.vert in Resources */,
-				DFD0669C169341E40086C6D6 /* SSAOL_glsl.frag in Resources */,
 				00CCAF15116A9FEE008396D5 /* CinderApp.icns in Resources */,
 				DFD0668B1693417E0086C6D6 /* random.png in Resources */,
 				DF29E54716FE998200F37AC9 /* Earth_from_NASA.jpg in Resources */,

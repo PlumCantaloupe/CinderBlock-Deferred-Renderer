@@ -812,28 +812,28 @@ public:
     
     void initTextures()
     {
-        mRandomNoise = gl::Texture( loadImage( loadResource( NOISE_SAMPLER ) ) ); //noise texture required for SSAO calculations
+        mRandomNoise = gl::Texture( loadImage( loadResource( RES_TEX_NOISE_SAMPLER ) ) ); //noise texture required for SSAO calculations
     }
     
     void initShaders()
     {
-        mDeferredShader		= gl::GlslProg( loadResource( DEFER_VERT ), loadResource( DEFER_FRAG ) );
-        mBasicBlender		= gl::GlslProg( loadResource( BBlender_VERT ), loadResource( BBlender_FRAG ) );
+        mDeferredShader		= gl::GlslProg( loadResource( RES_GLSL_DEFER_VERT ), loadResource( RES_GLSL_DEFER_FRAG ) );
+        mBasicBlender		= gl::GlslProg( loadResource( RES_GLSL_BASIC_BLENDER_VERT ), loadResource( RES_GLSL_BASIC_BLENDER_FRAG ) );
         
         if(mUseSSAO) {
-            mSSAOShader			= gl::GlslProg( loadResource( SSAO_VERT ), loadResource( SSAO_FRAG ) );
-            mHBlurShader		= gl::GlslProg( loadResource( BLUR_H_VERT ), loadResource( BLUR_H_FRAG ) );
-            mVBlurShader		= gl::GlslProg( loadResource( BLUR_V_VERT ), loadResource( BLUR_V_FRAG ) );
+            mSSAOShader			= gl::GlslProg( loadResource( RES_GLSL_SSAO_VERT ), loadResource( RES_GLSL_SSAO_FRAG ) );
+            mHBlurShader		= gl::GlslProg( loadResource( RES_GLSL_BLUR_H_VERT ), loadResource( RES_GLSL_BLUR_H_FRAG ) );
+            mVBlurShader		= gl::GlslProg( loadResource( RES_GLSL_BLUR_V_VERT ), loadResource( RES_GLSL_BLUR_V_FRAG ) );
         }
         
-        mLightShader		= gl::GlslProg( loadResource( LIGHT_VERT ), loadResource( LIGHT_FRAG ) );
-        mAlphaToRBG         = gl::GlslProg( loadResource( ALPHA_RGB_VERT ), loadResource( ALPHA_RGB_FRAG ) );
+        mLightShader		= gl::GlslProg( loadResource( RES_GLSL_LIGHT_VERT ), loadResource( RES_GLSL_LIGHT_FRAG ) );
+        mAlphaToRBG         = gl::GlslProg( loadResource( RES_GLSL_ALPHA_RGB_VERT ), loadResource( RES_GLSL_ALPHA_RGB_FRAG ) );
         
         if (mUseShadows) {
-            mCubeShadowShader   = gl::GlslProg( loadResource( RES_SHADER_CUBESHADOW_VERT ), loadResource( RES_SHADER_CUBESHADOW_FRAG ) );
+            mCubeShadowShader   = gl::GlslProg( loadResource( RES_GLSL_CUBESHADOW_VERT ), loadResource( RES_GLSL_CUBESHADOW_FRAG ) );
         }
         
-		mFXAAShader			= gl::GlslProg( loadResource( RES_SHADER_FXAA_VERT ), loadResource( RES_SHADER_FXAA_FRAG ) );
+		mFXAAShader			= gl::GlslProg( loadResource( RES_GLSL_FXAA_VERT ), loadResource( RES_GLSL_FXAA_FRAG ) );
     }
     
     void initFBOs()
