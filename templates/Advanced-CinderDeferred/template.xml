@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<cinder>
+    <template name="Cinder Deferred Renderer: Advanced" parent="org.libcinder.apptemplates.basicopengl">
+        <requires>cinder.plumcantaloupe.cinderdeferredrenderer</requires>
+        <source replaceContents="true" replaceName="true">src/_TBOX_PREFIX_App.cpp</source>
+        <resource
+            name="RES_TEX_EARTH"
+            type="IMAGE"
+            id="147"
+            >resources/Earth_from_NASA.jpg</resource>
+    </template>
+</cinder>

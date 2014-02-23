@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<cinder>
+    <block
+        name="Cinder Deferred Renderer"
+        id="cinder.plumcantaloupe.cinderdeferredrenderer"
+        author="Anthony Scavarelli"
+        summary="A deferred renderer for Cinder. Also includes point lights, SSAO, and FXAA."
+        url="https://github.com/PlumCantaloupe/Cinder-Deferred-Renderer"
+        git="git://github.com/PlumCantaloupe/Cinder-Deferred-Renderer.git"
+        >
+        
+      <supports os="macosx" />
+      <supports os="msw" />
+      
+      <header>src/CinderDeferred/DeferredRenderer.h</header>
+      <header>src/CinderDeferred/CubeShadowMap.h</header>
+
+      <platform os="macosx">
+        <includePath>src/CinderDeferred</includePath>
+      </platform>
+      <platform os="msw">
+        <includePath>src/CinderDeferred</includePath>
+      </platform>
+
+      <resource
+            name="RES_TEX_NOISE_SAMPLER"
+            type="IMAGE"
+            id="128"
+            >resources/CinderDeferredResources/textures/random.png</resource>
+        <resource
+            name="RES_GLSL_ALPHA_RGB_VERT"
+            type="GLSL"
+            id="129"
+            >resources/CinderDeferredResources/shaders/AlphaToRGB_glsl.vert</resource>
+        <resource
+            name="RES_GLSL_ALPHA_RGB_FRAG"
+            type="GLSL"
+            id="130"
+            >resources/CinderDeferredResources/shaders/AlphaToRGB_glsl.frag</resource>
+        <resource
+            name="RES_GLSL_BASIC_BLENDER_VERT"
+            type="GLSL"
+            id="131"
+            >resources/CinderDeferredResources/shaders/BasicBlender_glsl.vert</resource>
+        <resource
+            name="RES_GLSL_BASIC_BLENDER_FRAG"
+            type="GLSL"
+            id="132"
+            >resources/CinderDeferredResources/shaders/BasicBlender_glsl.frag</resource>
+        <resource
+            name="RES_GLSL_BLUR_H_VERT"
+            type="GLSL"
+            id="133"
+            >resources/CinderDeferredResources/shaders/Blur_h_glsl.vert</resource>
+        <resource
+            name="RES_GLSL_BLUR_H_FRAG"
+            type="GLSL"
+            id="134"
+            >resources/CinderDeferredResources/shaders/Blur_h_glsl.frag</resource>
+        <resource
+            name="RES_GLSL_BLUR_V_VERT"
+            type="GLSL"
+            id="135"
+            >resources/CinderDeferredResources/shaders/Blur_v_glsl.vert</resource>
+        <resource
+            name="RES_GLSL_BLUR_V_FRAG"
+            type="GLSL"
+            id="136"
+            >resources/CinderDeferredResources/shaders/Blur_v_glsl.frag</resource>
+        <resource
+            name="RES_GLSL_CUBESHADOW_VERT"
+            type="GLSL"
+            id="137"
+            >resources/CinderDeferredResources/shaders/CubeShadowMap_glsl.vert</resource>
+        <resource
+            name="RES_GLSL_CUBESHADOW_FRAG"
+            type="GLSL"
+            id="138"
+            >resources/CinderDeferredResources/shaders/CubeShadowMap_glsl.frag</resource>
+        <resource
+            name="RES_GLSL_DEFER_VERT"
+            type="GLSL"
+            id="139"
+            >resources/CinderDeferredResources/shaders/Deferred_glsl.vert</resource>
+        <resource
+            name="RES_GLSL_DEFER_FRAG"
+            type="GLSL"
+            id="140"
+            >resources/CinderDeferredResources/shaders/Deferred_glsl.frag</resource>
+        <resource
+            name="RES_GLSL_FXAA_VERT"
+            type="GLSL"
+            id="141"
+            >resources/CinderDeferredResources/shaders/FXAA_glsl.vert</resource>
+        <resource
+            name="RES_GLSL_FXAA_FRAG"
+            type="GLSL"
+            id="142"
+            >resources/CinderDeferredResources/shaders/FXAA_glsl.frag</resource>
+        <resource
+            name="RES_GLSL_LIGHT_VERT"
+            type="GLSL"
+            id="143"
+            >resources/CinderDeferredResources/shaders/Light_glsl.vert</resource>
+        <resource
+            name="RES_GLSL_LIGHT_FRAG"
+            type="GLSL"
+            id="144"
+            >resources/CinderDeferredResources/shaders/Light_glsl.frag</resource>
+        <resource
+            name="RES_GLSL_SSAO_VERT"
+            type="GLSL"
+            id="145"
+            >resources/CinderDeferredResources/shaders/SSAO_glsl.vert</resource>
+        <resource
+            name="RES_GLSL_SSAO_FRAG"
+            type="GLSL"
+            id="146"
+            >resources/CinderDeferredResources/shaders/SSAO_glsl.frag</resource>
+        
+    </block>
+    
+    <template>templates/Advanced-CinderDeferred/template.xml</template>
+    <template>templates/Basic-CinderDeferred/template.xml</template>
+    
+</cinder>
