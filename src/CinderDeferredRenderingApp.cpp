@@ -1,6 +1,6 @@
 //What is this?
-//A Cinder app that utilizes a deferred rendering engine to render lights and SSAO. There is also point-light shadow-mapping (heavy GPU cost though)
-//anthony@luminartists.ca
+//A Cinder app that utilizes a deferred rendering engine to render lights and SSAO. There is also point-light shadow-mapping (heavy GPU cost though very nice)
+//anthony.scavarelli@gmail.com
 
 #ifndef CinderDeferredRendering_CinderDeferredRenderingApp_h
 #define CinderDeferredRendering_CinderDeferredRenderingApp_h
