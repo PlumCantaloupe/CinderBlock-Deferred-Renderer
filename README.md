@@ -3,9 +3,12 @@ A Cinder Block deferred rendering meant for ready-to-go scenes with many dynamic
 
 Drag this into your blocks folder within your Cinder directory (0.8.5, possibly 0.8.4), and use Tinderbox (under the toold directory) to create a projects with everything copied over appropriately.
 
+Included "Advanced" Template
 <img src="http://farm9.staticflickr.com/8363/8402994769_16588ca60f_c.jpg" />
-<img src="http://farm9.staticflickr.com/8087/8406554876_8af255d2e0_c.jpg" />
 <img src="http://farm9.staticflickr.com/8216/8406568340_3099ee04f3_c.jpg" />
+Included "Basic" Template
+<img src="http://farm8.staticflickr.com/7451/12713642585_8704c8131a_c.jpg" />
+<img src="http://farm8.staticflickr.com/7319/12713862853_c2741b2c63_c.jpg" />
 
 Deferred rendering + shadow-mapping uses a huge amount if VRAM (one of its disadvantages); but its advantages can be a large amount of dynamic point lights possible.
 
