@@ -10,7 +10,10 @@ varying vec2 uv;
 
 void main()
 {
-	vec4 ssaoTex	= texture2D( ssoaTex, uv);
+    vec2 uv2 = uv;
+    uv2.t = 1-uv2.t;
+    
+	vec4 ssaoTex	= texture2D( ssoaTex, uv2);
     vec4 shadowsTex	= texture2D( shadowsTex, uv);
 	vec4 baseTex	= texture2D( baseTex, uv);
     

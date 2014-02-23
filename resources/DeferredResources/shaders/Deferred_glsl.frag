@@ -4,6 +4,7 @@ uniform float diff_coeff, phong_coeff, two_sided;
 uniform float useTexture;
 uniform sampler2D tex0;
 
+varying vec2 uv;
 varying vec3 vPos, vNormal;
 varying float vDepth;
 
@@ -13,8 +14,6 @@ void main(void)
 	vec3 normal = normalize(vNormal);
     
     //get texture if one binded otherwise use color as defined by useTexture float (range: 0.0 - 1.0)
-    vec2 uv = gl_TexCoord[0].st;
-    uv.t = 1.0 - uv.t;
     vec4 texColor = texture2D(tex0, uv) * useTexture;
     vec4 vertColor = gl_Color * (1.0 - useTexture);
     

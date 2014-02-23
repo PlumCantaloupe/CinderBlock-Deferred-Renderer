@@ -43,8 +43,6 @@ public:
     void update();
     void draw();
     
-    void mouseDown( MouseEvent event );
-	void mouseDrag( MouseEvent event );
     void keyDown( app::KeyEvent event );
     
     void drawShadowCasters(gl::GlslProg* deferShader) const;
@@ -62,7 +60,7 @@ protected:
     gl::Texture         mEarthTex;
 	
     //camera
-    MayaCamUI           mMayaCam;
+    CameraPersp         mCam;
     DeferredRenderer    mDeferredRenderer;
     
     int mCurrLightIndex;
@@ -89,7 +87,7 @@ void CinderDeferredRenderingApp::prepareSettings( Settings *settings )
 void CinderDeferredRenderingApp::setup()
 {
     //!!test texture for diffuse texture
-    mEarthTex = gl::Texture( loadImage( loadResource( RES_EARTH_TEX ) ) );
+    mEarthTex = gl::Texture( loadImage( loadResource( RES_TEX_EARTH ) ) );
     
 	gl::disableVerticalSync(); //so I can get a true representation of FPS (if higher than 60 anyhow :/)
     
@@ -105,13 +103,9 @@ void CinderDeferredRenderingApp::setup()
 	mShowParams = true;
 	
 	//set up camera
-    CameraPersp initialCam;
-	initialCam.setPerspective( 45.0f, getWindowAspectRatio(), 0.1, 10000 );
-    initialCam.lookAt(CAM_POSITION_INIT * 1.5f, Vec3f::zero(), Vec3f(0.0f, 1.0f, 0.0f) );
-    initialCam.setCenterOfInterestPoint(Vec3f::zero());
-	mMayaCam.setCurrentCam( initialCam );
-    
-    gl::setMatrices( initialCam );
+	mCam.setPerspective( 45.0f, getWindowAspectRatio(), 0.1, 10000 );
+    mCam.lookAt(CAM_POSITION_INIT * 1.5f, Vec3f::zero(), Vec3f(0.0f, 1.0f, 0.0f) );
+    mCam.setCenterOfInterestPoint(Vec3f::zero());
 
     //create functions pointers to send to deferred renderer
     std::function<void(gl::GlslProg*)> fRenderShadowCastersFunc;
@@ -126,9 +120,9 @@ void CinderDeferredRenderingApp::setup()
     //NULL value represents the opportunity to a function pointer to an "overlay" method. Basically only basic textures can be used and it is overlayed onto the final scene.
     //see example of such a function (from another project) commented out at the bottom of this class ...
     
-    //mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, NULL, NULL, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 ); //no overlay or "particles"
+    mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, NULL, NULL, &mCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 ); //no overlay or "particles"
     //mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, fRenderOverlayFunc, NULL, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 ); //overlay enabled
-    mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, fRenderOverlayFunc, fRenderParticlesFunc, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 ); //overlay and "particles" enabled -- not working yet
+    //mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, fRenderOverlayFunc, fRenderParticlesFunc, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 ); //overlay and "particles" enabled -- not working yet
     
     //have these cast point light shadows
     mDeferredRenderer.addCubeLight(    Vec3f(-2.0f, 4.0f, 6.0f),      Color(0.10f, 0.69f, 0.93f) * LIGHT_BRIGHTNESS_DEFAULT, true);      //blue
@@ -181,18 +175,6 @@ void CinderDeferredRenderingApp::draw()
 	if (mShowParams) {
 		mParams.draw();
     }
-}
-
-void CinderDeferredRenderingApp::mouseDown( MouseEvent event )
-{
-	if( event.isAltDown() )
-		mMayaCam.mouseDown( event.getPos() );
-}
-
-void CinderDeferredRenderingApp::mouseDrag( MouseEvent event )
-{
-	if( event.isAltDown() )
-		mMayaCam.mouseDrag( event.getPos(), event.isLeftDown(), event.isMiddleDown(), event.isRightDown() );
 }
 
 void CinderDeferredRenderingApp::keyDown( KeyEvent event ) 
@@ -350,7 +332,7 @@ void CinderDeferredRenderingApp::drawNonShadowCasters(gl::GlslProg* deferShader)
 void CinderDeferredRenderingApp::drawOverlay() const
 {
     Vec3f camUp, camRight;
-    mMayaCam.getCamera().getBillboardVectors(&camRight, &camUp);
+    mCam.getBillboardVectors(&camRight, &camUp);
     
     //create text labels
     TextLayout layout1;

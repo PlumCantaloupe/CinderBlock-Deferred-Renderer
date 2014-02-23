@@ -1,106 +1,102 @@
 #version 120
-//original SSAO shader graciously written at: http://www.gamedev.net/topic/556187-the-best-ssao-ive-seen/
-//haven't got this working yet here ... TODO to see the difference
+//original SSAO shader graciously written at: http://www.gamerendering.com/2009/01/14/ssao/
+//modified to work with glsl 120
 
-//uniform sampler2D gnormals;
-uniform sampler2D gposition;
-uniform sampler2D gdepthAndNormals;
-uniform sampler2D gdiffuse;
-uniform sampler2D grandom;
+uniform sampler2D rnm;
+uniform sampler2D normalMap;
 
 varying vec2 uv;
 
-vec3 readNormal(vec2 coord)
+//may have to change these as they are generally scene-dependent ( to get the look you want )
+const float totStrength = 0.88;
+const float strength = 0.6;
+const float offset = 0.02;
+const float falloff = 0.01;
+const float rad = 0.02;
+
+#define SAMPLES 10 // 10 is good
+const float invSamples = -0.5/20.0;
+
+// NOTE: THIS ONE IS BRUTALLY OPTIMIZED!! SO IT*S REALLY HARD TO FOLLOW
+
+float rand(vec2 co)
 {
-    return normalize(texture2D(gdepthAndNormals, coord).xyz*2.0  - 1.0);
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
-vec3 posFromDepth(vec2 coord)
+int randInt(int start, int end)
 {
-    float d = texture2D(gdepthAndNormals, coord).a;
-    vec3 tray = mat3x3(gl_ProjectionMatrixInverse)*vec3((coord.x-0.5)*2.0,(coord.y-0.5)*2.0,1.0);
-    return tray*d;
-//    return texture2D(gposition, coord).rgb;
-}
-
-//Ambient Occlusion form factor:
-float aoFF(vec3 ddiff, vec3 cnorm, float c1, float c2)
-{
-    vec3 vv = normalize(ddiff);
-    float rd = length(ddiff);
-    return (1.0-clamp(dot(readNormal(uv+vec2(c1,c2)),-vv),0.0,1.0)) * clamp(dot( cnorm,vv ),0.0,1.0) * (1.0 - 1.0/sqrt(1.0/(rd*rd) + 1.0));
-}
-
-//GI form factor:
-float giFF(vec3 ddiff,vec3 cnorm, float c1, float c2)
-{
-    vec3 vv = normalize(ddiff);
-    float rd = length(ddiff);
-    return 1.0*clamp(dot(readNormal(uv+vec2(c1,c2)),-vv),0.0,1.0) * clamp(dot( cnorm,vv ),0.0,1.0) / (rd*rd+1.0);
+    return int(fract(sin(dot(vec2(start, end),vec2(12.9898,78.233))) * 43758.5453));
 }
 
 void main(void)
 {
-    //read current normal,position and color.
-    vec3 n = readNormal(uv);
-    vec3 p = posFromDepth(uv);
-    vec3 col = texture2D(gdiffuse, uv).rgb;
-    
-    //randomization texture
-    vec2 fres = vec2(800.0/128.0*5,600.0/128.0*5);
-    vec3 random = texture2D(grandom, uv*fres.xy).rgb;
-    random = random*2.0-vec3(1.0);
-    
-    //initialize variables:
-    float ao = 0.0;
-    vec3 gi = vec3(0.0,0.0,0.0);
-    float incx = 1.0/800.0*0.1;
-    float incy = 1.0/600.0*0.1;
-    float pw = incx;
-    float ph = incy;
-    float cdepth = texture2D(gdepthAndNormals, uv).a;
-    
-    //3 rounds of 8 samples each.
-    for(float i=0.0; i<3.0; ++i)
+    // these are the random vectors inside a unit sphere
+    //vec3 pSphere[10] = vec3[](vec3(-0.010735935, 0.01647018, 0.0062425877),vec3(-0.06533369, 0.3647007, -0.13746321),vec3(-0.6539235, -0.016726388, -0.53000957),vec3(0.40958285, 0.0052428036, -0.5591124),vec3(-0.1465366, 0.09899267, 0.15571679),vec3(-0.44122112, -0.5458797, 0.04912532),vec3(0.03755566, -0.10961345, -0.33040273),vec3(0.019100213, 0.29652783, 0.066237666),vec3(0.8765323, 0.011236004, 0.28265962),vec3(0.29264435, -0.40794238, 0.15964167));
+
+    // these are the random vectors inside a unit sphere ( must be defined this way as Apple doesn't support anything beyond GLSL 120 (this has changed recently but older OS's will not)
+    vec3 pSphere[10];
+    pSphere[0] = vec3(0.13790712, 0.24864247, 0.44301823);
+    pSphere[1] = vec3(0.33715037, 0.56794053, -0.005789503);
+    pSphere[2] = vec3(0.06896307, -0.15983082, -0.85477847);
+    pSphere[3] = vec3(-0.014653638, 0.14027752, 0.0762037);
+    pSphere[4] = vec3(0.010019933, -0.1924225, -0.034443386);
+    pSphere[5] = vec3(-0.35775623, -0.5301969, -0.43581226);
+    pSphere[6] = vec3(-0.3169221, 0.106360726, 0.015860917);
+    pSphere[7] = vec3(0.010350345, -0.58698344, 0.0046293875);
+    pSphere[8] = vec3(-0.053382345, 0.059675813, -0.5411899);
+    pSphere[9] = vec3(0.035267662, -0.063188605, 0.54602677);
+
+    //grab a normal for reflecting the sample rays later on
+    vec3 fres = normalize((texture2D(rnm,rand(uv) * offset * uv).xyz*2.0) - vec3(1.0));
+
+    vec4 currentPixelSample = texture2D(normalMap, uv);
+
+    float currentPixelDepth = currentPixelSample.a;
+
+    // current fragment coords in screen space
+    vec3 ep = vec3(uv.xy,currentPixelDepth);
+
+    // get the normal of current fragment
+    vec3 norm = currentPixelSample.xyz;
+
+    float bl = 0.0;
+
+    // adjust for the depth ( not sure if this is good..)
+    //float radD = rad/currentPixelDepth;
+
+    //vec3 ray, se, occNorm;
+    float occluderDepth, depthDifference;
+    vec4 occluderFragment;
+    vec3 ray;
+
+    for(int i=0; i<SAMPLES;++i)
     {
-        float npw = (pw+0.0007*random.x)/cdepth;
-        float nph = (ph+0.0007*random.y)/cdepth;
-        
-        vec3 ddiff = posFromDepth(uv+vec2(npw,nph))-p;
-        vec3 ddiff2 = posFromDepth(uv+vec2(npw,-nph))-p;
-        vec3 ddiff3 = posFromDepth(uv+vec2(-npw,nph))-p;
-        vec3 ddiff4 = posFromDepth(uv+vec2(-npw,-nph))-p;
-        vec3 ddiff5 = posFromDepth(uv+vec2(0,nph))-p;
-        vec3 ddiff6 = posFromDepth(uv+vec2(0,-nph))-p;
-        vec3 ddiff7 = posFromDepth(uv+vec2(npw,0))-p;
-        vec3 ddiff8 = posFromDepth(uv+vec2(-npw,0))-p;
-        
-        ao+=  aoFF(ddiff,n,npw,nph);
-        ao+=  aoFF(ddiff2,n,npw,-nph);
-        ao+=  aoFF(ddiff3,n,-npw,nph);
-        ao+=  aoFF(ddiff4,n,-npw,-nph);
-        ao+=  aoFF(ddiff5,n,0,nph);
-        ao+=  aoFF(ddiff6,n,0,-nph);
-        ao+=  aoFF(ddiff7,n,npw,0);
-        ao+=  aoFF(ddiff8,n,-npw,0);
-        
-        gi+=  giFF(ddiff,n,npw,nph)*texture2D(gdiffuse, uv+vec2(npw,nph)).rgb;
-        gi+=  giFF(ddiff2,n,npw,-nph)*texture2D(gdiffuse, uv+vec2(npw,-nph)).rgb;
-        gi+=  giFF(ddiff3,n,-npw,nph)*texture2D(gdiffuse, uv+vec2(-npw,nph)).rgb;
-        gi+=  giFF(ddiff4,n,-npw,-nph)*texture2D(gdiffuse, uv+vec2(-npw,-nph)).rgb;
-        gi+=  giFF(ddiff5,n,0,nph)*texture2D(gdiffuse, uv+vec2(0,nph)).rgb;
-        gi+=  giFF(ddiff6,n,0,-nph)*texture2D(gdiffuse, uv+vec2(0,-nph)).rgb;
-        gi+=  giFF(ddiff7,n,npw,0)*texture2D(gdiffuse, uv+vec2(npw,0)).rgb;
-        gi+=  giFF(ddiff8,n,-npw,0)*texture2D(gdiffuse, uv+vec2(-npw,0)).rgb;
-        
-        //increase sampling area:
-        pw += incx;
-        ph += incy;
+    // get a vector (randomized inside of a sphere with radius 1.0) from a texture and reflect it
+    ray = rad*reflect(pSphere[i],fres);
+
+    // if the ray is outside the hemisphere then change direction
+    //se = ep + sign(dot(ray,norm) )*rad*reflect(pSphere[i],fres).xy;
+
+    // get the depth of the occluder fragment
+    vec2 something = ep.xy + sign(dot(ray,norm) )*ray.xy;
+    occluderFragment = texture2D(normalMap, something );
+
+    // get the normal of the occluder fragment
+    //occNorm = occluderFragment.xyz;
+
+    // if depthDifference is negative = occluder is behind current fragment
+    depthDifference = currentPixelDepth-occluderFragment.a;
+
+    // calculate the difference between the normals as a weight
+
+    //normDiff = (1.0-dot(occluderFragment.xyz,norm)); // used to be 1.0 - 
+
+    // the falloff equation, starts at falloff and is kind of 1/x^2 falling 
+    bl += step(falloff,depthDifference)*(1.0-dot(occluderFragment.xyz,norm))*(1.0-smoothstep(falloff,strength,depthDifference));
     }
-    ao/=24.0;
-    gi/=24.0;
-    
-    
-    gl_FragColor = vec4(col-vec3(ao)+gi*5.0,1.0);
-    //gl_FragColor = vec4(1.0,1.0,1.0,1.0);
+
+    // output the result
+    gl_FragColor.r = 1.0+bl*invSamples;
+    //gl_FragColor.a = currentPixelDepth; //using depth to set a water fog depth for later use   
 }

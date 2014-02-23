@@ -7,7 +7,8 @@ varying vec3 color;
 
 void main()
 {
-    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+    gl_Position = ftransform();
+
 	position_cs = gl_ModelViewMatrix * gl_Vertex;
 	normal_cs = gl_NormalMatrix * gl_Normal;
 	color = gl_Color.rgb;

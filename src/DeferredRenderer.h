@@ -27,7 +27,7 @@
 #include "cinder/gl/Fbo.h"
 #include "cinder/gl/Vbo.h"
 #include "cinder/ImageIo.h"
-#include "cinder/MayaCamUI.h"
+#include "cinder/Camera.h"
 
 #include "boost/function.hpp"
 
@@ -171,11 +171,23 @@ public:
 class DeferredRenderer
 {
 public:
+    enum {
+        FBO_DEFERRED,
+        FBO_SSAO,
+        FBO_PINGPONG_H,
+        FBO_PINGPONG_V,
+        FBO_LIGHTS,
+        FBO_SHADOWS,
+        FBO_COMPOSITED,
+        FBO_OVERLAY,
+        FBO_PARTICLES
+    };
+    
     std::function<void(gl::GlslProg*)> fRenderShadowCastersFunc;
     std::function<void(gl::GlslProg*)> fRenderNotShadowCastersFunc;
     std::function<void()> fRenderOverlayFunc;
     std::function<void()> fRenderParticlesFunc;
-    MayaCamUI              *mMayaCam;
+    Camera              *mCam;
     
     Matrix44f           mLightFaceViewMatrices[6];
 	
@@ -220,7 +232,8 @@ public:
         SHOW_SSAO_VIEW,
         SHOW_SSAO_BLURRED_VIEW,
         SHOW_LIGHT_VIEW,
-        SHOW_SHADOWS_VIEW
+        SHOW_SHADOWS_VIEW,
+        NUM_RENDER_VIEWS
     };
     
 public:
@@ -234,7 +247,7 @@ public:
                 const std::function<void(gl::GlslProg*)> renderObjFunc,
                 const std::function<void()> renderOverlayFunc,
                 const std::function<void()> renderParticlesFunc,
-                MayaCamUI *cam,
+                Camera    *cam,
                 Vec2i     FBORes = Vec2i(512, 512),
                 int       shadowMapRes = 512)
     {
@@ -245,7 +258,7 @@ public:
         fRenderNotShadowCastersFunc = renderObjFunc;
         fRenderOverlayFunc = renderOverlayFunc;
         fRenderParticlesFunc = renderParticlesFunc;
-        mMayaCam = cam;
+        mCam = cam;
         mFBOResolution = FBORes;
         mShadowMapRes = shadowMapRes;
         
@@ -297,16 +310,14 @@ public:
         glClearDepth(1.0f);
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         
-        gl::setMatrices( mMayaCam->getCamera() );
-        
+        gl::setMatrices( *mCam );
         renderDeferredFBO();
-        
         createShadowMaps();
         renderShadowsToFBOs();
         
-        gl::setMatrices( mMayaCam->getCamera() );
-        
+        gl::setMatrices( *mCam );
         renderLightsToFBO();
+        
         renderSSAOToFBO();
     }
     
@@ -360,14 +371,14 @@ public:
             
             glCullFace(GL_BACK); //don't need what we won't see
             
-            gl::setMatrices( mMayaCam->getCamera() );
+            gl::setMatrices( *mCam );
             
             mCubeShadowShader.bind();
             (*currCube)->mShadowMap.bind(0); //the magic texture
             mCubeShadowShader.uniform("shadow", 0);
             
-            mCubeShadowShader.uniform("light_position", mMayaCam->getCamera().getModelViewMatrix().transformPointAffine( (*currCube)->mShadowCam.getEyePoint() )); //conversion from world-space to camera-space (required here)
-            mCubeShadowShader.uniform("camera_view_matrix_inv", mMayaCam->getCamera().getInverseModelViewMatrix());
+            mCubeShadowShader.uniform("light_position", mCam->getModelViewMatrix().transformPointAffine( (*currCube)->mShadowCam.getEyePoint() )); //conversion from world-space to camera-space (required here)
+            mCubeShadowShader.uniform("camera_view_matrix_inv", mCam->getInverseModelViewMatrix());
             mCubeShadowShader.uniform("light_view_matrix", (*currCube)->mShadowCam.getModelViewMatrix());
             mCubeShadowShader.uniform("light_projection_matrix", (*currCube)->mShadowCam.getProjectionMatrix());
             
@@ -407,7 +418,6 @@ public:
         //render out main scene to FBO
         mDeferredFBO.bindFramebuffer();
         gl::setViewport( mDeferredFBO.getBounds() );
-        gl::setMatrices( mMayaCam->getCamera() );
         
         glClearColor( 0.5f, 0.5f, 0.5f, 1 );
         glClearDepth(1.0f);
@@ -438,7 +448,7 @@ public:
         //render out main scene to FBO
         mSSAOMap.bindFramebuffer();
         gl::setViewport( mSSAOMap.getBounds() );
-        gl::setMatricesWindow( (float)mSSAOMap.getWidth(), (float)mSSAOMap.getHeight() ); //setting orthogonal view as rendering to a fullscreen quad
+        gl::setMatricesWindow( mSSAOMap.getSize() ); //setting orthogonal view as rendering to a fullscreen quad
         
         glClearColor( 0.5f, 0.5f, 0.5f, 1 );
         glClearDepth(1.0f);
@@ -476,8 +486,8 @@ public:
     {
         //--------- render horizontal blur first --------------
         mPingPongBlurH.bindFramebuffer();
-        gl::setMatricesWindow( (float)mPingPongBlurH.getWidth(), (float)mPingPongBlurH.getHeight() );
         gl::setViewport( mPingPongBlurH.getBounds() );
+        gl::setMatricesWindow( mPingPongBlurH.getSize() );
         glClearColor( 0.5f, 0.5f, 0.5f, 1 );
         glClearDepth(1.0f);
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -494,7 +504,7 @@ public:
         //--------- now render vertical blur --------------
         mPingPongBlurV.bindFramebuffer();
         gl::setViewport( mPingPongBlurV.getBounds() );
-        gl::setMatricesWindow( (float)mPingPongBlurV.getWidth(), (float)mPingPongBlurV.getHeight() );
+        gl::setMatricesWindow( mPingPongBlurV.getSize() );
         glClearColor( 0.5f, 0.5f, 0.5f, 1 );
         glClearDepth(1.0f);
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -529,7 +539,7 @@ public:
                     glClearColor( 0.5f, 0.5f, 0.5f, 0.0f );
                     glClearDepth(1.0f);
                     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-                    gl::setMatrices(mMayaCam->getCamera());
+                    gl::setMatrices(*mCam);
                     gl::setViewport( mOverlayFBO.getBounds() );
                     
                     fRenderOverlayFunc();
@@ -559,7 +569,7 @@ public:
                     mParticlesFBO.bindFramebuffer();
                     glClearColor( 0.5f, 0.5f, 0.5f, 0.0f );
                     glClear( GL_COLOR_BUFFER_BIT );
-                    gl::setMatrices(mMayaCam->getCamera());
+                    gl::setMatrices(*mCam);
                     gl::setViewport( mParticlesFBO.getBounds() );
                     
                     fRenderParticlesFunc();
@@ -577,8 +587,8 @@ public:
 				glClearColor( 0.5f, 0.5f, 0.5f, 1 );
 				glClearDepth(1.0f);
 				glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-                gl::setMatricesWindow( (float)mFinalSSFBO.getWidth(), (float)mFinalSSFBO.getHeight() );
                 gl::setViewport( mFinalSSFBO.getBounds() );
+                gl::setMatricesWindow( mFinalSSFBO.getSize() );
                 mPingPongBlurV.getTexture().bind(0);
                 mAllShadowsFBO.getTexture().bind(1);
                 mLightGlowFBO.getTexture().bind(2);
@@ -586,7 +596,7 @@ public:
                 mBasicBlender.uniform("ssaoTex", 0 );
                 mBasicBlender.uniform("shadowsTex", 1 );
                 mBasicBlender.uniform("baseTex", 2 );
-                gl::drawSolidRect( Rectf( 0, mFinalSSFBO.getWidth(), mFinalSSFBO.getHeight(), 0) );
+                gl::drawSolidRect( Rectf( 0, mFinalSSFBO.getHeight(), mFinalSSFBO.getWidth(), 0) );
                 mBasicBlender.unbind();
                 mLightGlowFBO.getTexture().unbind(2);
                 mAllShadowsFBO.getTexture().unbind(1);
@@ -598,13 +608,13 @@ public:
                 
                 if(fRenderParticlesFunc) {
                     mParticlesFBO.getTexture().bind(0);
-                    gl::drawSolidRect( Rectf( 0, mFinalSSFBO.getHeight(), mFinalSSFBO.getWidth(), 0) ); //?? why do I have to draw this sideways??
+                    gl::drawSolidRect( Rectf( 0, mFinalSSFBO.getHeight(), mFinalSSFBO.getWidth(), 0) );
                     mParticlesFBO.getTexture().unbind(0);
                 }
                 
                 if(fRenderOverlayFunc) {
                     mOverlayFBO.getTexture().bind();
-                    gl::drawSolidRect( Rectf( 0, mFinalSSFBO.getHeight(), mFinalSSFBO.getWidth(), 0) ); //?? why do I have to draw this sideways??
+                    gl::drawSolidRect( Rectf( 0, mFinalSSFBO.getHeight(), mFinalSSFBO.getWidth(), 0) );
                     mOverlayFBO.getTexture().unbind();
                 }
                 
@@ -614,9 +624,9 @@ public:
                 
 				mFinalSSFBO.unbindFramebuffer();
                 
-				mFinalSSFBO.getTexture().bind(0);
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
+				mFinalSSFBO.getTexture().bind(0);
 				mFXAAShader.bind();
 				mFXAAShader.uniform("buf0", 0);
 				mFXAAShader.uniform("frameBufSize", Vec2f(mFinalSSFBO.getWidth(), mFinalSSFBO.getHeight()));
@@ -675,8 +685,8 @@ public:
                 mSSAOMap.getTexture().bind(0);
                 mBasicBlender.bind();
                 mBasicBlender.uniform("ssaoTex", 0 );
-                mBasicBlender.uniform("shadowsTex", 0 );
-                mBasicBlender.uniform("baseTex", 0 );
+                mBasicBlender.uniform("shadowsTex", 0 );    //just binding same one so only it shows....
+                mBasicBlender.uniform("baseTex", 0 );       //just binding same one so only it shows....
                 gl::drawSolidRect( Rectf( 0, getWindowHeight(), getWindowWidth(), 0) );
                 mBasicBlender.unbind();
                 mSSAOMap.getTexture().unbind(0);
@@ -688,7 +698,7 @@ public:
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                 mPingPongBlurV.getTexture().bind(0);
-                gl::drawSolidRect( Rectf( 0, getWindowHeight(), getWindowWidth(), 0) );
+                gl::drawSolidRect( Rectf( 0, 0, getWindowWidth(), getWindowHeight()) );
                 mPingPongBlurV.getTexture().unbind(0);
             }
                 break;
@@ -715,7 +725,7 @@ public:
     {
         for(vector<Light_PS*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube) {
             if ( shader != NULL ) {
-                shader->uniform("lightPos", mMayaCam->getCamera().getModelViewMatrix().transformPointAffine( (*currCube)->getPos() ) ); //pass light pos to pixel shader
+                shader->uniform("lightPos", mCam->getModelViewMatrix().transformPointAffine( (*currCube)->getPos() ) ); //pass light pos to pixel shader
                 shader->uniform("lightCol", (*currCube)->getColor()); //pass light color (magnitude is power) to pixel shader
                 shader->uniform("dist", (*currCube)->getAOEDist()); //pass the light's area of effect radius to pixel shader
                 (*currCube)->renderCubeAOE(); //render the proxy shape
@@ -752,7 +762,7 @@ public:
         mLightShader.uniform("colorMap", 2);
         mDeferredFBO.getTexture(3).bind(3); //bind attr tex
         mLightShader.uniform("attrMap", 3);
-        mLightShader.uniform("camPos", mMayaCam->getCamera().getEyePoint());
+        mLightShader.uniform("camPos", mCam->getEyePoint());
         
         drawLightMeshes( &mLightShader );
         
@@ -775,7 +785,7 @@ public:
     
     void initShaders()
     {
-        mSSAOShader			= gl::GlslProg( loadResource( SSAO_VERT ), loadResource( SSAO_FRAG_LIGHT ) );
+        mSSAOShader			= gl::GlslProg( loadResource( SSAO_VERT ), loadResource( SSAO_FRAG ) );
         mDeferredShader		= gl::GlslProg( loadResource( DEFER_VERT ), loadResource( DEFER_FRAG ) );
         mBasicBlender		= gl::GlslProg( loadResource( BBlender_VERT ), loadResource( BBlender_FRAG ) );
         mHBlurShader		= gl::GlslProg( loadResource( BLUR_H_VERT ), loadResource( BLUR_H_FRAG ) );
