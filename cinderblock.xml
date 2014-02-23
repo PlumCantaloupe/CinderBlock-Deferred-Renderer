@@ -5,7 +5,7 @@
         id="cinder.plumcantaloupe.cinderdeferredrenderer"
         author="Anthony Scavarelli"
         summary="A deferred renderer for Cinder. Also includes point lights, SSAO, and FXAA."
-        url="https://github.com/PlumCantaloupe/Cinder-Deferred-Renderer"
+        url="http://www.anthony-scavarelli.com"
         git="git://github.com/PlumCantaloupe/Cinder-Deferred-Renderer.git"
         >
         
