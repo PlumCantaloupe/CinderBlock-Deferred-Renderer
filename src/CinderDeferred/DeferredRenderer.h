@@ -7,12 +7,12 @@
 //
 
 /*
- TODO:  
-        - Want framework independence
-            - VboMesh Class
-            - Fbo Class
-            - Shader Class
-            - Conversion function (e.g. Vec3f to float[3] and vice versa)
+ TODO:
+ - Want framework independence
+ - VboMesh Class
+ - Fbo Class
+ - Shader Class
+ - Conversion function (e.g. Vec3f to float[3] and vice versa)
  */
 
 #ifndef CinderDeferredRendering_DeferredRenderer_h
@@ -250,14 +250,14 @@ public:
     const int getNumCubeLights(){ return mCubeLights.size(); };
     
     void setup( const boost::function<void(gl::GlslProg*)> renderShadowCastFunc,
-                const boost::function<void(gl::GlslProg*)> renderObjFunc,
-                const boost::function<void()> renderOverlayFunc,
-                const boost::function<void()> renderParticlesFunc,
-                Camera    *cam,
-                Vec2i     FBORes = Vec2i(512, 512),
-                int       shadowMapRes = 512,
-                BOOL      useSSAO = true,
-                BOOL      useShadows = true)
+               const boost::function<void(gl::GlslProg*)> renderObjFunc,
+               const boost::function<void()> renderOverlayFunc,
+               const boost::function<void()> renderParticlesFunc,
+               Camera    *cam,
+               Vec2i     FBORes = Vec2i(512, 512),
+               int       shadowMapRes = 512,
+               BOOL      useSSAO = true,
+               BOOL      useShadows = true)
     {
         //create cube VBO reference for lights
         getCubeVboMesh( &mCubeVBOMesh, Vec3f(0.0f, 0.0f, 0.0f), Vec3f(1.0f, 1.0f, 1.0f) );
@@ -576,8 +576,8 @@ public:
                     //glDrawBuffer(GL_DEPTH_ATTACHMENT);
                     
                     glBlitFramebuffer(  0, 0, mDeferredFBO.getWidth(), mDeferredFBO.getHeight(),
-                                        0, 0, mParticlesFBO.getWidth(), mParticlesFBO.getHeight(),
-                                        GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+                                      0, 0, mParticlesFBO.getWidth(), mParticlesFBO.getHeight(),
+                                      GL_DEPTH_BUFFER_BIT, GL_NEAREST );
                     
                     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
                     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -620,6 +620,7 @@ public:
                 mBasicBlender.uniform("baseTex", 2 );
                 mBasicBlender.uniform("useSSAO", mUseSSAO );
                 mBasicBlender.uniform("useShadows", mUseShadows );
+                mBasicBlender.uniform("onlySSAO", false );
                 gl::drawSolidRect( Rectf( 0.0f, (float)mFinalSSFBO.getHeight(), (float)mFinalSSFBO.getWidth(), 0.0f) );
                 mBasicBlender.unbind();
                 mLightGlowFBO.getTexture().unbind(2);
@@ -716,6 +717,9 @@ public:
                     mBasicBlender.uniform("ssaoTex", 0 );
                     mBasicBlender.uniform("shadowsTex", 0 );    //just binding same one so only it shows....
                     mBasicBlender.uniform("baseTex", 0 );       //just binding same one so only it shows....
+                    mBasicBlender.uniform("useSSAO", true );
+                    mBasicBlender.uniform("useShadows", false );
+                    mBasicBlender.uniform("onlySSAO", true );
                     gl::drawSolidRect( Rectf( 0.0f, (float)getWindowHeight(), (float)getWindowWidth(), 0.0f) );
                     mBasicBlender.unbind();
                     mSSAOMap.getTexture().unbind(0);
@@ -897,20 +901,20 @@ public:
         };
         
         Vec3f normals[24]={ Vec3f(1,0,0),   Vec3f(1,0,0),   Vec3f(1,0,0),   Vec3f(1,0,0),
-                            Vec3f(0,1,0),	Vec3f(0,1,0),	Vec3f(0,1,0),	Vec3f(0,1,0),
-                            Vec3f(0,0,1),	Vec3f(0,0,1),	Vec3f(0,0,1),	Vec3f(0,0,1),
-                            Vec3f(-1,0,0),	Vec3f(-1,0,0),	Vec3f(-1,0,0),	Vec3f(-1,0,0),
-                            Vec3f(0,-1,0),	Vec3f(0,-1,0),  Vec3f(0,-1,0),  Vec3f(0,-1,0),
-                            Vec3f(0,0,-1),	Vec3f(0,0,-1),	Vec3f(0,0,-1),	Vec3f(0,0,-1)
-                        };
+            Vec3f(0,1,0),	Vec3f(0,1,0),	Vec3f(0,1,0),	Vec3f(0,1,0),
+            Vec3f(0,0,1),	Vec3f(0,0,1),	Vec3f(0,0,1),	Vec3f(0,0,1),
+            Vec3f(-1,0,0),	Vec3f(-1,0,0),	Vec3f(-1,0,0),	Vec3f(-1,0,0),
+            Vec3f(0,-1,0),	Vec3f(0,-1,0),  Vec3f(0,-1,0),  Vec3f(0,-1,0),
+            Vec3f(0,0,-1),	Vec3f(0,0,-1),	Vec3f(0,0,-1),	Vec3f(0,0,-1)
+        };
         
         uint32_t indices[6*6] = {   0, 1, 2, 0, 2, 3,
-                                    4, 5, 6, 4, 6, 7,
-                                    8, 9,10, 8, 10,11,
-                                    12,13,14,12,14,15,
-                                    16,17,18,16,18,19,
-                                    20,21,22,20,22,23
-                                };
+            4, 5, 6, 4, 6, 7,
+            8, 9,10, 8, 10,11,
+            12,13,14,12,14,15,
+            16,17,18,16,18,19,
+            20,21,22,20,22,23
+        };
         
         gl::VboMesh::Layout layout;
         layout.setStaticPositions();
