@@ -120,9 +120,9 @@ void CinderDeferredRenderingApp::setup()
     //NULL value represents the opportunity to a function pointer to an "overlay" method. Basically only basic textures can be used and it is overlayed onto the final scene.
     //see example of such a function (from another project) commented out at the bottom of this class ...
     
-    mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, NULL, NULL, &mCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 ); //no overlay or "particles"
-    //mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, fRenderOverlayFunc, NULL, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 ); //overlay enabled
-    //mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, fRenderOverlayFunc, fRenderParticlesFunc, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024 ); //overlay and "particles" enabled -- not working yet
+    mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, NULL, NULL, &mCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024, true, true ); //no overlay or "particles"
+    //mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, fRenderOverlayFunc, NULL, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024, true, true ); //overlay enabled
+    //mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, fRenderOverlayFunc, fRenderParticlesFunc, &mMayaCam, Vec2i(APP_RES_HORIZONTAL, APP_RES_VERTICAL), 1024, true, true ); //overlay and "particles" enabled -- not working yet
     
     //have these cast point light shadows
     mDeferredRenderer.addCubeLight(    Vec3f(-2.0f, 4.0f, 6.0f),      Color(0.10f, 0.69f, 0.93f) * LIGHT_BRIGHTNESS_DEFAULT, true);      //blue
