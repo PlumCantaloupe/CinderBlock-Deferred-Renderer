@@ -5,6 +5,7 @@
 #include "cinder/app/AppBasic.h"
 #include "cinder/gl/gl.h"
 #include "cinder/Camera.h"
+#include "cinder/MayaCamUI.h"
 #include "cinder/gl/GlslProg.h"
 #include "cinder/gl/Texture.h"
 #include "cinder/ImageIo.h"
@@ -40,6 +41,8 @@ public:
     void update();
     void draw();
     void keyDown( app::KeyEvent event );
+    void mouseDown( MouseEvent event );
+    void mouseDrag( MouseEvent event );
     
     void drawShadowCasters(gl::GlslProg* deferShader) const;
     void drawNonShadowCasters(gl::GlslProg* deferShader) const;
@@ -56,6 +59,7 @@ protected:
     gl::Texture         mEarthTex;
 	
     //camera
+    MayaCamUI           mMayaCam;   //need a camera that will allow mCam to mirror it as MayaCamUI doesn't current allow a non const reference to its CameraPersp
     CameraPersp         mCam;
     DeferredRenderer    mDeferredRenderer;
     
@@ -98,6 +102,7 @@ void _TBOX_PREFIX_App::setup()
 	mCam.setPerspective( 45.0f, getWindowAspectRatio(), 0.1f, 10000.0f );
     mCam.lookAt(CAM_POSITION_INIT * 1.5f, Vec3f::zero(), Vec3f(0.0f, 1.0f, 0.0f) );
     mCam.setCenterOfInterestPoint(Vec3f::zero());
+    mMayaCam.setCurrentCam(mCam);
     
     //create functions pointers to send to deferred renderer
     boost::function<void(gl::GlslProg*)> fRenderShadowCastersFunc = boost::bind( &_TBOX_PREFIX_App::drawShadowCasters, this, boost::lambda::_1 );
@@ -153,6 +158,8 @@ void _TBOX_PREFIX_App::setup()
 
 void _TBOX_PREFIX_App::update()
 {
+    mCam = mMayaCam.getCamera();
+    mDeferredRenderer.mCam = &mCam;
 	mCurrFramerate = getAverageFps();
 }
 
@@ -264,6 +271,20 @@ void _TBOX_PREFIX_App::keyDown( KeyEvent event )
 		default:
 			break;
 	}
+}
+
+void _TBOX_PREFIX_App::mouseDown( MouseEvent event )
+{
+    if( event.isAltDown() ) {
+		mMayaCam.mouseDown( event.getPos() );
+    }
+}
+
+void _TBOX_PREFIX_App::mouseDrag( MouseEvent event )
+{
+    if( event.isAltDown() ) {
+		mMayaCam.mouseDrag( event.getPos(), event.isLeftDown(), event.isMiddleDown(), event.isRightDown() );
+    }
 }
 
 #pragma mark - render functions
