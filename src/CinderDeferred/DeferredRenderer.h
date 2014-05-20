@@ -43,7 +43,7 @@ static const float  LIGHT_CUTOFF_DEFAULT = 0.01f;        //light intensity cutof
 static const float  LIGHT_BRIGHTNESS_DEFAULT = 60.0f;      //brightness of lights
 
 //Light Cube Class
-class Light_PS
+class Light_Point
 {
     
 public:
@@ -66,7 +66,7 @@ private:
     float                       transformMatAOE[16]; //scale/translate matrix
     
 public:
-	Light_PS(gl::VboMesh *vboMeshRef, Vec3f pos, Color col, int shadowMapRes, bool castsShadows = false, bool visible = true)
+	Light_Point(gl::VboMesh *vboMeshRef, Vec3f pos, Color col, int shadowMapRes, bool castsShadows = false, bool visible = true)
     {
         mCubeVBOMeshRef = vboMeshRef;
         mPos = pos;
@@ -216,7 +216,7 @@ public:
     gl::GlslProg		mAlphaToRBG;
 	gl::GlslProg		mFXAAShader;
     
-    vector<Light_PS*>   mCubeLights;
+    vector<Light_Point*>   mCubeLights;
     
     Vec2i               mFBOResolution;
     int                 mShadowMapRes;
@@ -246,7 +246,7 @@ public:
     DeferredRenderer(){};
     ~DeferredRenderer(){};
     
-    vector<Light_PS*>* getCubeLightsRef(){ return &mCubeLights; };
+    vector<Light_Point*>* getCubeLightsRef(){ return &mCubeLights; };
     const int getNumCubeLights(){ return mCubeLights.size(); };
     
     void setup( const boost::function<void(gl::GlslProg*)> renderShadowCastFunc,
@@ -306,9 +306,9 @@ public:
     
     void update(){}
     
-    Light_PS* addCubeLight(const Vec3f position, const Color color, const bool castsShadows = false, const bool visible = true)
+    Light_Point* addPointLight(const Vec3f position, const Color color, const bool castsShadows = false, const bool visible = true)
     {
-        Light_PS *newLightP = new Light_PS( &mCubeVBOMesh, position, color, mShadowMapRes, (castsShadows && mUseShadows), visible );
+        Light_Point *newLightP = new Light_Point( &mCubeVBOMesh, position, color, mShadowMapRes, (castsShadows && mUseShadows), visible );
         mCubeLights.push_back( newLightP );
         return newLightP;
     }
@@ -340,7 +340,7 @@ public:
     {
         //render depth map cube
         glEnable(GL_CULL_FACE);
-        for(vector<Light_PS*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube)
+        for(vector<Light_Point*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube)
         {
             if (!(*currCube)->doesCastShadows()) {continue;}
             
@@ -373,7 +373,7 @@ public:
     void renderShadowsToFBOs()
     {
         glEnable(GL_CULL_FACE);
-        for(vector<Light_PS*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube) {
+        for(vector<Light_Point*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube) {
             if (!(*currCube)->doesCastShadows()) {continue;}
             
             (*currCube)->mShadowsFbo.bindFramebuffer();
@@ -417,7 +417,7 @@ public:
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         gl::enableAlphaBlending();
         
-        for(vector<Light_PS*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube) {
+        for(vector<Light_Point*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube) {
             if ( !(*currCube)->doesCastShadows() ) {continue;}
             
             (*currCube)->mShadowsFbo.getTexture().bind();
@@ -761,7 +761,7 @@ public:
     
     void drawLightMeshes(gl::GlslProg* shader = NULL)
     {
-        for(vector<Light_PS*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube) {
+        for(vector<Light_Point*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube) {
             if ( shader != NULL ) {
                 shader->uniform("lightPos", mCam->getModelViewMatrix().transformPointAffine( (*currCube)->getPos() ) ); //pass light pos to pixel shader
                 shader->uniform("lightCol", (*currCube)->getColor()); //pass light color (magnitude is power) to pixel shader
