@@ -52,9 +52,9 @@ void _TBOX_PREFIX_App::setup()
     boost::function<void(void)> fRenderParticlesFunc = boost::bind( &_TBOX_PREFIX_App::drawDepthParticles, this );
     
     mRenderView = DeferredRenderer::SHOW_FINAL_VIEW;
-    mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, NULL, NULL, &mCam, Vec2i(1024, 512), 1024, true, true);
-    mDeferredRenderer.addCubeLight( Vec3f(-2.5f, 3.0f, 0.0f), Color(0.10f, 0.69f, 0.93f) * LIGHT_BRIGHTNESS_DEFAULT * 0.3f, true, false);      //blue
-    mDeferredRenderer.addCubeLight( Vec3f(2.5f, 3.0f, 0.0f), Color(0.94f, 0.15f, 0.23f) * LIGHT_BRIGHTNESS_DEFAULT * 0.3f, false, false);      //red
+    mDeferredRenderer.setup( fRenderShadowCastersFunc, fRenderNotShadowCastersFunc, NULL, NULL, &mCam, Vec2i(1024, 512), 1024, true, true, true);
+    mDeferredRenderer.addPointLight( Vec3f(-2.5f, 3.0f, 0.0f), Color(0.10f, 0.69f, 0.93f) * LIGHT_BRIGHTNESS_DEFAULT * 0.3f, true, false);      //blue
+    mDeferredRenderer.addPointLight( Vec3f(2.5f, 3.0f, 0.0f), Color(0.94f, 0.15f, 0.23f) * LIGHT_BRIGHTNESS_DEFAULT * 0.3f, false, false);      //red
 }
 
 void _TBOX_PREFIX_App::keyDown( KeyEvent event )

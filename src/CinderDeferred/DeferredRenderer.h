@@ -241,6 +241,7 @@ public:
 private:
     BOOL    mUseSSAO;
     BOOL    mUseShadows;
+    BOOL    mUseFXAA;
     
 public:
     DeferredRenderer(){};
@@ -257,7 +258,8 @@ public:
                Vec2i     FBORes = Vec2i(512, 512),
                int       shadowMapRes = 512,
                BOOL      useSSAO = true,
-               BOOL      useShadows = true)
+               BOOL      useShadows = true,
+               BOOL      useFXAA = true)
     {
         //create cube VBO reference for lights
         getCubeVboMesh( &mCubeVBOMesh, Vec3f(0.0f, 0.0f, 0.0f), Vec3f(1.0f, 1.0f, 1.0f) );
@@ -271,6 +273,7 @@ public:
         mShadowMapRes = shadowMapRes;
         mUseSSAO = useSSAO;
         mUseShadows = useShadows;
+        mUseFXAA = useFXAA;
         
         glClearDepth(1.0f);
         glDisable(GL_CULL_FACE);
@@ -656,11 +659,16 @@ public:
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
 				mFinalSSFBO.getTexture().bind(0);
-				mFXAAShader.bind();
-				mFXAAShader.uniform("buf0", 0);
-				mFXAAShader.uniform("frameBufSize", Vec2f((float)mFinalSSFBO.getWidth(), (float)mFinalSSFBO.getHeight()));
+                
+                if(mUseFXAA) {
+                    mFXAAShader.bind();
+                    mFXAAShader.uniform("buf0", 0);
+                    mFXAAShader.uniform("frameBufSize", Vec2f((float)mFinalSSFBO.getWidth(), (float)mFinalSSFBO.getHeight()));
+                }
 				gl::drawSolidRect( Rectf( 0.0f, (float)getWindowHeight(), (float)getWindowWidth(), 0.0f) );
-				mFXAAShader.unbind();
+                if(mUseFXAA) {
+                    mFXAAShader.unbind();
+                }
 				mFinalSSFBO.getTexture().unbind(0);
             }
                 break;
