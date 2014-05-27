@@ -40,10 +40,9 @@ public:
     //float                       modelMatrixAOE[16];    //scale/translate matrix
     
 private:
-    Vec3f                       mPos;
     Color                       mCol;
     float                       mIntensity;
-    float                       mLightRadius;
+    float                       mMaskRadius;
     bool                        mCastShadows;
     bool                        mProxyVisible;
     int                         mShadowMapRes;
@@ -51,13 +50,12 @@ private:
     gl::VboMesh                 *mVBOMeshRef;
     
 public:
-	Light_Point(gl::VboMesh *vboMeshRef, Vec3f pos, Color col, float intensity, float lightRadius, int shadowMapRes, BOOL castsShadows = false, BOOL proxyVisible = false)
+	Light_Point(gl::VboMesh *vboMeshRef, Vec3f pos, Color col, float intensity, int shadowMapRes, BOOL castsShadows = false, BOOL proxyVisible = false)
     {
         mVBOMeshRef = vboMeshRef;
-        mPos = pos;
         mCol = col;
         mIntensity = intensity;
-        mLightRadius = lightRadius;
+        mMaskRadius = intensity * 100.0f;
         //mAOEDist = lightRadius; //sqrt( col.length()/LIGHT_CUTOFF_DEFAULT );
         mShadowMapRes = shadowMapRes;
         
@@ -73,20 +71,15 @@ public:
         
         //create matrices
         float modelScale = 1.0f;
-        modelMatrix[0] = modelScale;    modelMatrix[4] = 0.0f;         modelMatrix[8] = 0.0f;         modelMatrix[12] = pos.x;
-        modelMatrix[1] = 0.0f;         modelMatrix[5] = modelScale;    modelMatrix[9] = 0.0f;         modelMatrix[13] = pos.y;
-        modelMatrix[2] = 0.0f;         modelMatrix[6] = 0.0f;         modelMatrix[10] = modelScale;   modelMatrix[14] = pos.z;
-        modelMatrix[3] = 0.0f;         modelMatrix[7] = 0.0f;         modelMatrix[11] = 0.0f;         modelMatrix[15] = 1.0f;
+        modelMatrix[0] = modelScale;        modelMatrix[4] = 0.0f;              modelMatrix[8] = 0.0f;              modelMatrix[12] = pos.x;
+        modelMatrix[1] = 0.0f;              modelMatrix[5] = modelScale;        modelMatrix[9] = 0.0f;              modelMatrix[13] = pos.y;
+        modelMatrix[2] = 0.0f;              modelMatrix[6] = 0.0f;              modelMatrix[10] = modelScale;       modelMatrix[14] = pos.z;
+        modelMatrix[3] = 0.0f;              modelMatrix[7] = 0.0f;              modelMatrix[11] = 0.0f;             modelMatrix[15] = 1.0f;
         
-//        modelMatrixAOE[0] = mAOEDist;      modelMatrixAOE[4] = 0.0f;          modelMatrixAOE[8] = 0.0f;          modelMatrixAOE[12] = pos.x;
-//        modelMatrixAOE[1] = 0.0f;          modelMatrixAOE[5] = mAOEDist;      modelMatrixAOE[9] = 0.0f;          modelMatrixAOE[13] = pos.y;
-//        modelMatrixAOE[2] = 0.0f;          modelMatrixAOE[6] = 0.0f;          modelMatrixAOE[10] = mAOEDist;     modelMatrixAOE[14] = pos.z;
-//        modelMatrixAOE[3] = 0.0f;          modelMatrixAOE[7] = 0.0f;          modelMatrixAOE[11] = 0.0f;         modelMatrixAOE[15] = 1.0f;
-        
-        modelMatrixAOE[0] = mLightRadius;  modelMatrixAOE[4] = 0.0f;          modelMatrixAOE[8] = 0.0f;          modelMatrixAOE[12] = pos.x;
-        modelMatrixAOE[1] = 0.0f;          modelMatrixAOE[5] = mLightRadius;  modelMatrixAOE[9] = 0.0f;          modelMatrixAOE[13] = pos.y;
-        modelMatrixAOE[2] = 0.0f;          modelMatrixAOE[6] = 0.0f;          modelMatrixAOE[10] = mLightRadius; modelMatrixAOE[14] = pos.z;
-        modelMatrixAOE[3] = 0.0f;          modelMatrixAOE[7] = 0.0f;          modelMatrixAOE[11] = 0.0f;         modelMatrixAOE[15] = 1.0f;
+        modelMatrixAOE[0] = mMaskRadius;    modelMatrixAOE[4] = 0.0f;          modelMatrixAOE[8] = 0.0f;            modelMatrixAOE[12] = pos.x;
+        modelMatrixAOE[1] = 0.0f;           modelMatrixAOE[5] = mMaskRadius;   modelMatrixAOE[9] = 0.0f;            modelMatrixAOE[13] = pos.y;
+        modelMatrixAOE[2] = 0.0f;           modelMatrixAOE[6] = 0.0f;          modelMatrixAOE[10] = mMaskRadius;    modelMatrixAOE[14] = pos.z;
+        modelMatrixAOE[3] = 0.0f;           modelMatrixAOE[7] = 0.0f;          modelMatrixAOE[11] = 0.0f;           modelMatrixAOE[15] = 1.0f;
         
     }
     
@@ -114,20 +107,18 @@ public:
 	void setPos(const Vec3f pos)
     {
         mShadowCam.lookAt( pos, Vec3f( pos.x, 0.0f, pos.z ) );
-        mPos = pos;
         modelMatrix[12] = pos.x;        modelMatrix[13] = pos.y;        modelMatrix[14] = pos.z;
         modelMatrixAOE[12] = pos.x;         modelMatrixAOE[13] = pos.y;         modelMatrixAOE[14] = pos.z;
     }
     
     Vec3f getPos() const
     {
-        return mPos;
+        return Vec3f(modelMatrix[12], modelMatrix[13], modelMatrix[14]);
     }
     
 	void setCol(const Color col)
     {
         mCol = col;
-//        mAOEDist = sqrt(col.length()/LIGHT_CUTOFF_DEFAULT);
     }
     
     Color getColor() const
@@ -145,20 +136,15 @@ public:
         return mIntensity;
     }
     
-    void setLightRadius( const float radius )
+    void setLightMaskRadius( const float radius )
     {
-        mLightRadius = radius;
+        mMaskRadius = radius;
     }
     
-    float getLightRadius() const
+    float getLightMaskRadius() const
     {
-        return mLightRadius;
+        return mMaskRadius;
     }
-    
-//    float getAOEDist() const
-//    {
-//        return mAOEDist;
-//    }
     
 	void renderProxy() const
     {
@@ -175,8 +161,6 @@ public:
     bool doesCastShadows() const {
         return mCastShadows;
     }
-    
-    
 };
 
 //Light Cube Class
