@@ -14,6 +14,7 @@
       
       <header>src/CinderDeferred/DeferredRenderer.h</header>
       <header>src/CinderDeferred/CubeShadowMap.h</header>
+      <header>src/CinderDeferred/Lights.h</header>
 
       <platform os="macosx">
         <includePath>src/CinderDeferred</includePath>
@@ -68,15 +69,15 @@
             id="136"
             >resources/CinderDeferredResources/shaders/Blur_v_glsl.frag</resource>
         <resource
-            name="RES_GLSL_CUBESHADOW_VERT"
+            name="RES_GLSL_POINTSHADOW_VERT"
             type="GLSL"
             id="137"
-            >resources/CinderDeferredResources/shaders/CubeShadowMap_glsl.vert</resource>
+            >resources/CinderDeferredResources/shaders/PointShadowMap_glsl.vert</resource>
         <resource
-            name="RES_GLSL_CUBESHADOW_FRAG"
+            name="RES_GLSL_POINTSHADOW_FRAG"
             type="GLSL"
             id="138"
-            >resources/CinderDeferredResources/shaders/CubeShadowMap_glsl.frag</resource>
+            >resources/CinderDeferredResources/shaders/PointShadowMap_glsl.frag</resource>
         <resource
             name="RES_GLSL_DEFER_VERT"
             type="GLSL"
@@ -98,25 +99,45 @@
             id="142"
             >resources/CinderDeferredResources/shaders/FXAA_glsl.frag</resource>
         <resource
-            name="RES_GLSL_LIGHT_VERT"
+            name="RES_GLSL_LIGHT_POINT_VERT"
             type="GLSL"
             id="143"
-            >resources/CinderDeferredResources/shaders/Light_glsl.vert</resource>
+            >resources/CinderDeferredResources/shaders/Light_Point_glsl.vert</resource>
         <resource
-            name="RES_GLSL_LIGHT_FRAG"
+            name="RES_GLSL_LIGHT_POINT_FRAG"
             type="GLSL"
             id="144"
-            >resources/CinderDeferredResources/shaders/Light_glsl.frag</resource>
+            >resources/CinderDeferredResources/shaders/Light_Point_glsl.frag</resource>
+        <resource
+            name="RES_GLSL_LIGHT_SPOT_VERT"
+            type="GLSL"
+            id="145"
+            >resources/CinderDeferredResources/shaders/Light_Spot_glsl.vert</resource>
+        <resource
+            name="RES_GLSL_LIGHT_SPOT_FRAG"
+            type="GLSL"
+            id="146"
+            >resources/CinderDeferredResources/shaders/Light_Spot_glsl.frag</resource>
         <resource
             name="RES_GLSL_SSAO_VERT"
             type="GLSL"
-            id="145"
+            id="147"
             >resources/CinderDeferredResources/shaders/SSAO_glsl.vert</resource>
         <resource
             name="RES_GLSL_SSAO_FRAG"
             type="GLSL"
-            id="146"
+            id="148"
             >resources/CinderDeferredResources/shaders/SSAO_glsl.frag</resource>
+        <resource
+            name="RES_GLSL_SPOTSHADOW_VERT"
+            type="GLSL"
+            id="149"
+            >resources/CinderDeferredResources/shaders/SpotShadowMap_glsl.vert</resource>
+        <resource
+            name="RES_GLSL_SPOTSHADOW_FRAG"
+            type="GLSL"
+            id="150"
+            >resources/CinderDeferredResources/shaders/SpotShadowMap_glsl.frag</resource>
         
     </block>
     

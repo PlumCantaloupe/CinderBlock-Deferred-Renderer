@@ -15,8 +15,7 @@
  - Conversion function (e.g. Vec3f to float[3] and vice versa)
  */
 
-#ifndef CinderDeferredRendering_DeferredRenderer_h
-#define CinderDeferredRendering_DeferredRenderer_h
+#pragma once
 
 #include "Resources.h"
 
@@ -33,142 +32,11 @@
 #include "boost/bind.hpp"
 #include "boost/lambda/lambda.hpp"
 
-#include "CubeShadowMap.h"
+#include "Lights.h"
 
 using namespace ci;
 using namespace ci::app;
 using namespace std;
-
-static const float  LIGHT_CUTOFF_DEFAULT = 0.01f;        //light intensity cutoff point
-static const float  LIGHT_BRIGHTNESS_DEFAULT = 60.0f;      //brightness of lights
-
-//Light Cube Class
-class Light_Point
-{
-    
-public:
-    float                       mCubeSize;
-    CameraPersp                 mShadowCam;
-    gl_Plum::CubeShadowMap      mShadowMap;
-    gl::Fbo                     mCubeDepthFbo;
-    gl::Fbo                     mShadowsFbo;
-    
-private:
-    Vec3f                       mPos;
-    Color                       mCol;
-    bool                        mCastShadows;
-    bool                        mVisible;
-    int                         mShadowMapRes;
-    float                       mAOEDist;
-    
-    gl::VboMesh                 *mCubeVBOMeshRef;
-    float                       transformMatBase[16]; //scale/translate matrix
-    float                       transformMatAOE[16]; //scale/translate matrix
-    
-public:
-	Light_Point(gl::VboMesh *vboMeshRef, Vec3f pos, Color col, int shadowMapRes, bool castsShadows = false, bool visible = true)
-    {
-        mCubeVBOMeshRef = vboMeshRef;
-        mPos = pos;
-        mCol = col;
-        mAOEDist = sqrt(col.length()/LIGHT_CUTOFF_DEFAULT);
-        mCubeSize = 2.0f;
-        mShadowMapRes = shadowMapRes;
-        
-        //set up fake "light" to grab matrix calculations from
-        mShadowCam.setPerspective( 90.0f, 1.0f, 1.0f, 100.0f );
-        mShadowCam.lookAt( pos, Vec3f( pos.x, 0.0f, pos.z ) );
-        
-        mCastShadows = castsShadows;
-        mVisible = visible;
-        if (mCastShadows) {setUpShadowStuff();}
-        
-        //create matrix
-        transformMatBase[0] = mCubeSize;    transformMatBase[1] = 0.0f;         transformMatBase[2] = 0.0f;         transformMatBase[3] = 0.0f;
-        transformMatBase[4] = 0.0f;         transformMatBase[5] = mCubeSize;    transformMatBase[6] = 0.0f;         transformMatBase[7] = 0.0f;
-        transformMatBase[8] = 0.0f;         transformMatBase[9] = 0.0f;         transformMatBase[10] = mCubeSize;   transformMatBase[11] = 0.0f;
-        transformMatBase[12] = pos.x;       transformMatBase[13] = pos.y;       transformMatBase[14] = pos.z;       transformMatBase[15] = 1.0f;
-        
-        transformMatAOE[0] = mAOEDist;      transformMatAOE[1] = 0.0f;          transformMatAOE[2] = 0.0f;          transformMatAOE[3] = 0.0f;
-        transformMatAOE[4] = 0.0f;          transformMatAOE[5] = mAOEDist;      transformMatAOE[6] = 0.0f;          transformMatAOE[7] = 0.0f;
-        transformMatAOE[8] = 0.0f;          transformMatAOE[9] = 0.0f;          transformMatAOE[10] = mAOEDist;     transformMatAOE[11] = 0.0f;
-        transformMatAOE[12] = pos.x;        transformMatAOE[13] = pos.y;        transformMatAOE[14] = pos.z;        transformMatAOE[15] = 1.0f;
-    }
-    
-    void setUpShadowStuff()
-    {
-        //set up cube map for point shadows
-        mShadowMap.setup( mShadowMapRes );
-        
-        //create FBO to hold depth values from cube map
-        gl::Fbo::Format formatShadow;
-        formatShadow.enableColorBuffer(true, 1);
-        formatShadow.enableDepthBuffer(true, true);
-        formatShadow.setMinFilter(GL_LINEAR);
-        formatShadow.setMagFilter(GL_LINEAR);
-        formatShadow.setWrap(GL_CLAMP, GL_CLAMP);
-        mCubeDepthFbo   = gl::Fbo( mShadowMapRes, mShadowMapRes, formatShadow);
-        
-        gl::Fbo::Format format;
-        format.setDepthInternalFormat( GL_DEPTH_COMPONENT24 );
-        format.setColorInternalFormat( GL_RGBA8 );
-        //format.setSamples( 4 ); // enable 4x antialiasing
-        mShadowsFbo	= gl::Fbo( mShadowMapRes, mShadowMapRes, format );
-    }
-    
-	void setPos(const Vec3f pos)
-    {
-        mShadowCam.lookAt( pos, Vec3f( pos.x, 0.0f, pos.z ) );
-        mPos = pos;
-        transformMatBase[12] = pos.x;        transformMatBase[13] = pos.y;        transformMatBase[14] = pos.z;
-        transformMatAOE[12] = pos.x;         transformMatAOE[13] = pos.y;         transformMatAOE[14] = pos.z;
-    }
-    
-    Vec3f getPos() const
-    {
-        return mPos;
-    }
-    
-	void setCol(const Color col)
-    {
-        mCol = col;
-        mAOEDist = sqrt(col.length()/LIGHT_CUTOFF_DEFAULT);
-    }
-    
-    Color getColor() const
-    {
-        return mCol;
-    }
-    
-    float getAOEDist() const
-    {
-        return mAOEDist;
-    }
-    
-	void renderCube() const
-    {
-        if( mVisible ) {
-            //gl::drawCube(mPos, Vec3f(mCubeSize, mCubeSize, mCubeSize));
-            
-            gl::pushMatrices();
-            gl::multModelView(transformMatBase);
-            gl::draw(*mCubeVBOMeshRef);
-            gl::popMatrices();
-        }
-    }
-    
-    void renderCubeAOE() const
-    {
-        //gl::drawCube(mPos, Vec3f(mAOEDist, mAOEDist, mAOEDist));
-        
-        gl::pushMatrices();
-        gl::multModelView(transformMatAOE);
-        gl::draw(*mCubeVBOMeshRef);
-        gl::popMatrices();
-    }
-    
-    bool doesCastShadows() const { return mCastShadows; }
-};
 
 class DeferredRenderer
 {
@@ -205,23 +73,27 @@ public:
     gl::Fbo				mOverlayFBO;
     gl::Fbo				mParticlesFBO;
     
-	gl::GlslProg		mCubeShadowShader;
+	gl::GlslProg		mPointShadowShader;
+    gl::GlslProg		mSpotShadowShader;
 	
     gl::GlslProg		mSSAOShader;
     gl::GlslProg		mDeferredShader;
     gl::GlslProg		mBasicBlender;
     gl::GlslProg		mHBlurShader;
     gl::GlslProg		mVBlurShader;
-    gl::GlslProg		mLightShader;
+    gl::GlslProg		mLightPointShader;
     gl::GlslProg		mAlphaToRBG;
 	gl::GlslProg		mFXAAShader;
     
-    vector<Light_Point*>   mCubeLights;
+    vector<Light_Point*>    mPointLights;
+    vector<Light_Spot*>     mSpotLights;
     
     Vec2i               mFBOResolution;
     int                 mShadowMapRes;
     
-    gl::VboMesh         mCubeVBOMesh; //pass cube Vbo to all "lights" to save on draw calls
+    gl::VboMesh         mCubeVBOMesh;    //pass cube Vbo to all point lights to save on draw calls
+    gl::VboMesh         mConeVBOMesh;    //pass cube Vbo to all spot lights to save on draw calls
+    gl::VboMesh         mSphereVBOMesh;
     
     enum
     {
@@ -247,8 +119,21 @@ public:
     DeferredRenderer(){};
     ~DeferredRenderer(){};
     
-    vector<Light_Point*>* getCubeLightsRef(){ return &mCubeLights; };
-    const int getNumCubeLights(){ return mCubeLights.size(); };
+    vector<Light_Point*>* getPointLightsRef(){
+        return &mPointLights;
+    };
+    
+    const int getNumPointLights(){
+        return mPointLights.size();
+    };
+    
+    vector<Light_Spot*>* getSpotLightsRef(){
+        return &mSpotLights;
+    };
+    
+    const int getNumSpotLights(){
+        return mSpotLights.size();
+    };
     
     void setup( const boost::function<void(gl::GlslProg*)> renderShadowCastFunc,
                const boost::function<void(gl::GlslProg*)> renderObjFunc,
@@ -263,6 +148,8 @@ public:
     {
         //create cube VBO reference for lights
         getCubeVboMesh( &mCubeVBOMesh, Vec3f(0.0f, 0.0f, 0.0f), Vec3f(1.0f, 1.0f, 1.0f) );
+        getConeVboMesh( &mConeVBOMesh, Vec3f(0.0f, 1.0f, 0.0f), 1.0f, 0.5f, 10);
+        getSphereVboMesh( &mSphereVBOMesh, Vec3f(0.0f, 0.0f, 0.0f), 0.5f, Vec2i(10,10));
         
         fRenderShadowCastersFunc = renderShadowCastFunc;
         fRenderNotShadowCastersFunc = renderObjFunc;
@@ -309,10 +196,17 @@ public:
     
     void update(){}
     
-    Light_Point* addPointLight(const Vec3f position, const Color color, const bool castsShadows = false, const bool visible = true)
+    Light_Point* addPointLight(const Vec3f position, const Color color, const float intensity, const float lightRadius, const bool castsShadows = false, const bool visible = false)
     {
-        Light_Point *newLightP = new Light_Point( &mCubeVBOMesh, position, color, mShadowMapRes, (castsShadows && mUseShadows), visible );
-        mCubeLights.push_back( newLightP );
+        Light_Point *newLightP = new Light_Point( &mCubeVBOMesh, position, color, intensity, lightRadius, mShadowMapRes, (castsShadows && mUseShadows), visible );
+        mPointLights.push_back( newLightP );
+        return newLightP;
+    }
+    
+    Light_Spot* addSpotLight(const Vec3f position, const Vec3f target, const Color color, const bool castsShadows = false, const bool visible = true)
+    {
+        Light_Spot *newLightP = new Light_Spot( &mConeVBOMesh, position, target, color, mShadowMapRes, (castsShadows && mUseShadows), visible );
+        mSpotLights.push_back( newLightP );
         return newLightP;
     }
     
@@ -323,6 +217,14 @@ public:
         glClearDepth(1.0f);
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         
+//        glEnable( GL_STENCIL_TEST );
+//		glStencilOp( GL_REPLACE, GL_REPLACE, GL_REPLACE );
+//		glStencilFunc( GL_ALWAYS, 1, 0xffffffff );
+//		glClearStencil( 0 );
+//        
+//        glStencilFunc( GL_EQUAL, 1, 0xffffffff );
+//		glStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
+        
         gl::setMatrices( *mCam );
         renderDeferredFBO();
         
@@ -331,8 +233,13 @@ public:
             renderShadowsToFBOs();
         }
         
+//        glDepthFunc( GL_GEQUAL );
+        
         gl::setMatrices( *mCam );
         renderLightsToFBO();
+        
+//        glDepthFunc( GL_LEQUAL );
+//		glDisable( GL_STENCIL_TEST );
         
         if(mUseSSAO) {
             renderSSAOToFBO();
@@ -343,32 +250,79 @@ public:
     {
         //render depth map cube
         glEnable(GL_CULL_FACE);
-        for(vector<Light_Point*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube)
+        glCullFace(GL_FRONT);
+        for(vector<Light_Point*>::iterator currPointLight = mPointLights.begin(); currPointLight != mPointLights.end(); ++currPointLight)
         {
-            if (!(*currCube)->doesCastShadows()) {continue;}
+            if (!(*currPointLight)->doesCastShadows()) {
+                continue;
+            }
             
-            (*currCube)->mCubeDepthFbo.bindFramebuffer();
+            (*currPointLight)->mDepthFBO.bindFramebuffer();
+            glClearDepth(1.0f);
+            glClear( GL_DEPTH_BUFFER_BIT );
             glDrawBuffer(GL_NONE);
             glReadBuffer(GL_NONE);
             glViewport(0, 0, mShadowMapRes, mShadowMapRes);
             
-            glCullFace(GL_FRONT);
-            
             glMatrixMode(GL_PROJECTION);
-            glLoadMatrixf((*currCube)->mShadowCam.getProjectionMatrix());
+            glLoadMatrixf((*currPointLight)->mShadowCam.getProjectionMatrix());
             glMatrixMode(GL_MODELVIEW);
             
             for (size_t i = 0; i < 6; ++i) {
-                (*currCube)->mShadowMap.bindDepthFB( i );
+                (*currPointLight)->mShadowMap.bindDepthFB( i );
                 glClear(GL_DEPTH_BUFFER_BIT);
                 
                 glLoadMatrixf(mLightFaceViewMatrices[i]);
-                glMultMatrixf((*currCube)->mShadowCam.getModelViewMatrix());
+                glMultMatrixf((*currPointLight)->mShadowCam.getModelViewMatrix());
                 
-                if (fRenderShadowCastersFunc) {fRenderShadowCastersFunc(NULL);}
+                if (fRenderShadowCastersFunc) {
+                    fRenderShadowCastersFunc( NULL );
+                }
             }
             
-            (*currCube)->mCubeDepthFbo.unbindFramebuffer();
+            (*currPointLight)->mDepthFBO.unbindFramebuffer();
+        }
+        
+        //render point light
+        for(vector<Light_Spot*>::iterator currSpotLight = mSpotLights.begin(); currSpotLight != mSpotLights.end(); ++currSpotLight)
+        {
+            if (!(*currSpotLight)->doesCastShadows()) {
+                continue;
+            }
+            
+//            (*currSpotLight)->mDepthFBO.bindFramebuffer();
+//            glClearDepth(1.0f);
+//            glClear( GL_DEPTH_BUFFER_BIT );
+//            glDrawBuffer(GL_NONE);
+//            glReadBuffer(GL_NONE);
+//            glViewport(0, 0, mShadowMapRes, mShadowMapRes);
+//            
+//            glMatrixMode(GL_PROJECTION);
+//            glLoadMatrixf((*currSpotLight)->mShadowCam.getProjectionMatrix());
+//            glMatrixMode(GL_MODELVIEW);
+//            glLoadMatrixf((*currSpotLight)->mShadowCam.getModelViewMatrix());
+//                
+//            if (fRenderShadowCastersFunc) {
+//                fRenderShadowCastersFunc( NULL );
+//            }
+//            
+//            (*currSpotLight)->mDepthFBO.unbindFramebuffer();
+            
+            gl::enableDepthWrite();
+            (*currSpotLight)->mDepthFBO.bindFramebuffer();
+//            glClearDepth(1.0f);
+            glClear( GL_DEPTH_BUFFER_BIT );
+//            glDrawBuffer(GL_NONE);
+//            glReadBuffer(GL_NONE);
+            glViewport(0, 0, mShadowMapRes, mShadowMapRes);
+            
+            gl::setMatrices((*currSpotLight)->mShadowCam);
+            
+            if (fRenderShadowCastersFunc) {
+                fRenderShadowCastersFunc( NULL );
+            }
+            
+            (*currSpotLight)->mDepthFBO.unbindFramebuffer();
         }
         glDisable(GL_CULL_FACE);
     }
@@ -376,38 +330,59 @@ public:
     void renderShadowsToFBOs()
     {
         glEnable(GL_CULL_FACE);
-        for(vector<Light_Point*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube) {
-            if (!(*currCube)->doesCastShadows()) {continue;}
+        glEnable(GL_TEXTURE_CUBE_MAP);
+        for(vector<Light_Point*>::iterator currPointLight = mPointLights.begin(); currPointLight != mPointLights.end(); ++currPointLight) {
+            if (!(*currPointLight)->doesCastShadows()) {
+                continue;
+            }
             
-            (*currCube)->mShadowsFbo.bindFramebuffer();
-            
+            (*currPointLight)->mShadowsFbo.bindFramebuffer();
             glClearColor( 0.5f, 0.5f, 0.5f, 0.0f );
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-            //glDrawBuffer(GL_BACK);
-            //glReadBuffer(GL_BACK);
-            gl::setViewport( (*currCube)->mShadowsFbo.getBounds() );
-            
+            gl::setViewport( (*currPointLight)->mShadowsFbo.getBounds() );
             glCullFace(GL_BACK); //don't need what we won't see
-            
             gl::setMatrices( *mCam );
             
-            mCubeShadowShader.bind();
-            (*currCube)->mShadowMap.bind(0); //the magic texture
-            mCubeShadowShader.uniform("shadow", 0);
-            
-            mCubeShadowShader.uniform("light_position", mCam->getModelViewMatrix().transformPointAffine( (*currCube)->mShadowCam.getEyePoint() )); //conversion from world-space to camera-space (required here)
-            mCubeShadowShader.uniform("camera_view_matrix_inv", mCam->getInverseModelViewMatrix());
-            mCubeShadowShader.uniform("light_view_matrix", (*currCube)->mShadowCam.getModelViewMatrix());
-            mCubeShadowShader.uniform("light_projection_matrix", (*currCube)->mShadowCam.getProjectionMatrix());
-            
+            mPointShadowShader.bind();
+            (*currPointLight)->mShadowMap.bind(0); //the magic texture
+            mPointShadowShader.uniform( "shadow", 0);
+            mPointShadowShader.uniform( "light_position", mCam->getModelViewMatrix().transformPointAffine( (*currPointLight)->mShadowCam.getEyePoint() )); //conversion from world-space to camera-space (required here)
+            mPointShadowShader.uniform( "camera_view_matrix_inv", mCam->getInverseModelViewMatrix());
+            mPointShadowShader.uniform( "light_view_matrix", (*currPointLight)->mShadowCam.getModelViewMatrix());
+            mPointShadowShader.uniform( "light_projection_matrix", (*currPointLight)->mShadowCam.getProjectionMatrix());
             drawScene();
+            (*currPointLight)->mShadowMap.unbind();
+            mPointShadowShader.unbind();
             
-            (*currCube)->mShadowMap.unbind();
-            glDisable(GL_TEXTURE_CUBE_MAP);
+            (*currPointLight)->mShadowsFbo.unbindFramebuffer();
+        }
+        glDisable(GL_TEXTURE_CUBE_MAP);
+        
+        for(vector<Light_Spot*>::iterator currSpotLight = mSpotLights.begin(); currSpotLight != mSpotLights.end(); ++currSpotLight) {
+            if (!(*currSpotLight)->doesCastShadows()) {
+                continue;
+            }
             
-            mCubeShadowShader.unbind();
+            (*currSpotLight)->mShadowsFbo.bindFramebuffer();
+            glClearColor( 0.5f, 0.5f, 0.5f, 0.0f );
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            gl::setViewport( (*currSpotLight)->mShadowsFbo.getBounds() );
+            glCullFace(GL_BACK); //don't need what we won't see
+            gl::setMatrices( *mCam );
             
-            (*currCube)->mShadowsFbo.unbindFramebuffer();
+            //get shadow matrix transform
+            Matrix44f shadowTransMatrix = (*currSpotLight)->mShadowCam.getProjectionMatrix();
+            shadowTransMatrix *= (*currSpotLight)->mShadowCam.getModelViewMatrix();
+            shadowTransMatrix *= mCam->getInverseModelViewMatrix();
+
+            (*currSpotLight)->mDepthFBO.bindDepthTexture(0);
+            mSpotShadowShader.bind();
+            mSpotShadowShader.uniform( "depthTexture", 0 );
+            mSpotShadowShader.uniform( "shadowTransMatrix", shadowTransMatrix );
+            drawScene();
+            mSpotShadowShader.unbind();
+            (*currSpotLight)->mDepthFBO.unbindTexture();
+            (*currSpotLight)->mShadowsFbo.unbindFramebuffer();
         }
         glDisable(GL_CULL_FACE);
         
@@ -420,13 +395,28 @@ public:
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         gl::enableAlphaBlending();
         
-        for(vector<Light_Point*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube) {
-            if ( !(*currCube)->doesCastShadows() ) {continue;}
+        //draw point light shadows
+        for(vector<Light_Point*>::iterator currPointLight = mPointLights.begin(); currPointLight != mPointLights.end(); ++currPointLight) {
+            if ( !(*currPointLight)->doesCastShadows() ) {
+                continue;
+            }
             
-            (*currCube)->mShadowsFbo.getTexture().bind();
+            (*currPointLight)->mShadowsFbo.getTexture().bind();
             gl::drawSolidRect( Rectf( 0, (float)mAllShadowsFBO.getHeight(), (float)mAllShadowsFBO.getWidth(), 0) ); //this is different as we are not using shaders to color these quads (need to fit viewport)
-            (*currCube)->mShadowsFbo.getTexture().unbind();
+            (*currPointLight)->mShadowsFbo.getTexture().unbind();
         }
+        
+        //draw spot light shadows
+        for(vector<Light_Spot*>::iterator currSpotLight = mSpotLights.begin(); currSpotLight != mSpotLights.end(); ++currSpotLight) {
+            if ( !(*currSpotLight)->doesCastShadows() ) {
+                continue;
+            }
+            
+            (*currSpotLight)->mShadowsFbo.getTexture().bind();
+            gl::drawSolidRect( Rectf( 0, (float)mAllShadowsFBO.getHeight(), (float)mAllShadowsFBO.getWidth(), 0) ); //this is different as we are not using shaders to color these quads (need to fit viewport)
+            (*currSpotLight)->mShadowsFbo.getTexture().unbind();
+        }
+        
         gl::disableAlphaBlending();
         mAllShadowsFBO.unbindFramebuffer();
     }
@@ -442,17 +432,34 @@ public:
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         
         mDeferredShader.bind();
-        mDeferredShader.uniform("diff_coeff", 0.15f);
-        mDeferredShader.uniform("phong_coeff", 0.3f);
-        mDeferredShader.uniform("two_sided", 0.8f);
-        mDeferredShader.uniform("useTexture", 0.0f);
+        mDeferredShader.uniform("projectionMatrix", mCam->getProjectionMatrix());
+        mDeferredShader.uniform("diffuse", Vec3f(1.0f, 1.0f, 1.0f));
+        mDeferredShader.uniform("specular", Vec3f(1.0f, 1.0f, 1.0f));
+        mDeferredShader.uniform("emissive", Vec3f(1.0f, 1.0f, 1.0f));
+        mDeferredShader.uniform("shininess", 10.0f);
+        mDeferredShader.uniform("additiveSpecular", 10.0f);
+        Matrix33f normalMatrix = mCam->getModelViewMatrix().subMatrix33(0, 0);
+        normalMatrix.invert();
+        normalMatrix.transpose();
+        mDeferredShader.uniform("normalMatrix", normalMatrix ); //getInverse( object modelMatrix ).transpose()
         
-        drawLightMeshes();
+        //!!must render these ourselves for each object
+        //!!mDeferredShader.uniform("modelMatrix", 0);  //matrix of object position, rotation, scale
+        //!!mDeferredShader.uniform("normalMatrix", 0); //getInverse( object modelMatrix ).transpose()
         
-        mDeferredShader.bind();
-        mDeferredShader.uniform("diff_coeff", 1.0f);
-        mDeferredShader.uniform("phong_coeff", 0.0f);
-        mDeferredShader.uniform("two_sided", 0.8f);
+//        mDeferredShader.uniform("diff_coeff", 0.15f);
+//        mDeferredShader.uniform("phong_coeff", 0.3f);
+//        mDeferredShader.uniform("two_sided", 0.8f);
+//        mDeferredShader.uniform("useTexture", 0.0f);
+        
+        drawLightMeshes( &mDeferredShader, true );
+        
+        mDeferredShader.uniform("modelViewMatrix", mCam->getModelViewMatrix());
+        
+//        mDeferredShader.bind();
+//        mDeferredShader.uniform("diff_coeff", 1.0f);
+//        mDeferredShader.uniform("phong_coeff", 0.0f);
+//        mDeferredShader.uniform("two_sided", 0.8f);
         
         if (fRenderShadowCastersFunc) {fRenderShadowCastersFunc(&mDeferredShader);}
         if (fRenderNotShadowCastersFunc) {fRenderNotShadowCastersFunc(&mDeferredShader);}
@@ -537,9 +544,16 @@ public:
         mPingPongBlurV.unbindFramebuffer();
     }
     
-    void renderFullScreenQuad( const int renderType )
+    void renderFullScreenQuad( const int renderType, const BOOL autoPrepareScene = true  )
     {
-        prepareDeferredScene(); //prepare all FBOs for use
+        renderQuad( renderType, Rectf( 0.0f, (float)getWindowHeight(), (float)getWindowWidth(), 0.0f), autoPrepareScene );
+    }
+    
+    void renderQuad( const int renderType, Rectf renderQuad, const BOOL autoPrepareScene = true  )
+    {
+        if( autoPrepareScene ) {
+            prepareDeferredScene(); //prepare all FBOs for use
+        }
         
         switch (renderType)
         {
@@ -665,7 +679,7 @@ public:
                     mFXAAShader.uniform("buf0", 0);
                     mFXAAShader.uniform("frameBufSize", Vec2f((float)mFinalSSFBO.getWidth(), (float)mFinalSSFBO.getHeight()));
                 }
-				gl::drawSolidRect( Rectf( 0.0f, (float)getWindowHeight(), (float)getWindowWidth(), 0.0f) );
+				gl::drawSolidRect( renderQuad );
                 if(mUseFXAA) {
                     mFXAAShader.unbind();
                 }
@@ -676,7 +690,7 @@ public:
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                 mDeferredFBO.getTexture(0).bind(0);
-                gl::drawSolidRect( Rectf( 0.0f, (float)getWindowHeight(), (float)getWindowWidth(), 0.0f) );
+                gl::drawSolidRect( renderQuad );
                 mDeferredFBO.getTexture(0).unbind(0);
             }
                 break;
@@ -686,7 +700,7 @@ public:
                 mDeferredFBO.getTexture(1).bind(0);
                 mAlphaToRBG.bind();
                 mAlphaToRBG.uniform("alphaTex", 0);
-                gl::drawSolidRect( Rectf( 0.0f, (float)getWindowHeight(), (float)getWindowWidth(), 0.0f) );
+                gl::drawSolidRect( renderQuad );
                 mAlphaToRBG.unbind();
                 mDeferredFBO.getTexture(1).unbind(0);
             }
@@ -695,7 +709,7 @@ public:
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                 mDeferredFBO.getTexture(2).bind(0);
-                gl::drawSolidRect( Rectf( 0.0f, (float)getWindowHeight(), (float)getWindowWidth(), 0.0f) );
+                gl::drawSolidRect( renderQuad );
                 mDeferredFBO.getTexture(2).unbind(0);
             }
                 break;
@@ -703,7 +717,7 @@ public:
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                 mDeferredFBO.getTexture(3).bind(0);
-                gl::drawSolidRect( Rectf( 0.0f, (float)getWindowHeight(), (float)getWindowWidth(), 0.0f) );
+                gl::drawSolidRect( renderQuad );
                 mDeferredFBO.getTexture(3).unbind(0);
             }
                 break;
@@ -712,7 +726,7 @@ public:
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                 mDeferredFBO.getTexture(1).bind(0);
-                gl::drawSolidRect( Rectf( 0.0f, (float)getWindowHeight(), (float)getWindowWidth(), 0.0f) );
+                gl::drawSolidRect( renderQuad );
                 mDeferredFBO.getTexture(1).unbind(0);
             }
                 break;
@@ -728,7 +742,7 @@ public:
                     mBasicBlender.uniform("useSSAO", true );
                     mBasicBlender.uniform("useShadows", false );
                     mBasicBlender.uniform("onlySSAO", true );
-                    gl::drawSolidRect( Rectf( 0.0f, (float)getWindowHeight(), (float)getWindowWidth(), 0.0f) );
+                    gl::drawSolidRect( renderQuad );
                     mBasicBlender.unbind();
                     mSSAOMap.getTexture().unbind(0);
                 }
@@ -741,7 +755,7 @@ public:
                     gl::setViewport( getWindowBounds() );
                     gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                     mPingPongBlurV.getTexture().bind(0);
-                    gl::drawSolidRect( Rectf( 0.0f, 0.0f, (float)getWindowWidth(), (float)getWindowHeight()) );
+                    gl::drawSolidRect( renderQuad );
                     mPingPongBlurV.getTexture().unbind(0);
                 }
             }
@@ -750,7 +764,7 @@ public:
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                 mLightGlowFBO.getTexture().bind(0);
-                gl::drawSolidRect( Rectf( 0.0f, (float)getWindowHeight(), (float)getWindowWidth(), 0.0f) );
+                gl::drawSolidRect( renderQuad );
                 mLightGlowFBO.getTexture().unbind(0);
             }
                 break;
@@ -759,7 +773,7 @@ public:
                     gl::setViewport( getWindowBounds() );
                     gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                     mAllShadowsFBO.getTexture().bind(0);
-                    gl::drawSolidRect( Rectf( 0.0f, (float)getWindowHeight(), (float)getWindowWidth(), 0.0f) );
+                    gl::drawSolidRect( renderQuad );
                     mAllShadowsFBO.getTexture().unbind(0);
                 }
             }
@@ -767,17 +781,40 @@ public:
         }
     }
     
-    void drawLightMeshes(gl::GlslProg* shader = NULL)
+    void drawLightMeshes(gl::GlslProg* shader = NULL, BOOL deferShaderUsed = false)
     {
-        for(vector<Light_Point*>::iterator currCube = mCubeLights.begin(); currCube != mCubeLights.end(); ++currCube) {
-            if ( shader != NULL ) {
-                shader->uniform("lightPos", mCam->getModelViewMatrix().transformPointAffine( (*currCube)->getPos() ) ); //pass light pos to pixel shader
-                shader->uniform("lightCol", (*currCube)->getColor()); //pass light color (magnitude is power) to pixel shader
-                shader->uniform("dist", (*currCube)->getAOEDist()); //pass the light's area of effect radius to pixel shader
-                (*currCube)->renderCubeAOE(); //render the proxy shape
+        //point lights
+        for(vector<Light_Point*>::iterator currPointLight = mPointLights.begin(); currPointLight != mPointLights.end(); ++currPointLight) {
+            if ( shader != NULL && !deferShaderUsed ) {
+                mLightPointShader.uniform("viewHeight", mDeferredFBO.getHeight());
+                mLightPointShader.uniform("viewWidth", mDeferredFBO.getWidth());
+                mLightPointShader.uniform("lightColor", (*currPointLight)->getColor());
+                mLightPointShader.uniform("lightRadius", (*currPointLight)->getLightRadius());
+                mLightPointShader.uniform("lightIntensity", (*currPointLight)->getIntensity());
+//                Matrix44f lightPosMat = Matrix44f::identity();
+//                lightPosMat.setTranslate((*currCube)->getPos());
+//                Matrix44f camPosMat = Matrix44f::identity();
+//                camPosMat.setTranslate(mCam->getEyePoint());
+//                lightPosMat = lightPosMat * camPosMat.inverted();
+                mLightPointShader.uniform("lightPositionVS", mCam->getModelViewMatrix().transformPointAffine( (*currPointLight)->getPos() ));
+                mLightPointShader.uniform("modelViewMatrix", mCam->getModelViewMatrix() * (*currPointLight)->modelMatrixAOE );
+            
+//                console() << mCam->getModelViewMatrix() << "\n";
+//                console() << mCam->getProjectionMatrix() << "\n";
+//                console() << mCam->getModelViewMatrix() * (*currCube)->modelMatrixAOE << "\n";
+//                console() << mCam->getModelViewMatrix().transformPointAffine( (*currCube)->getPos() ) << "\n";
+                
+//                shader->uniform("lightPos", mCam->getModelViewMatrix().transformPointAffine( (*currCube)->getPos() ) ); //pass light pos to pixel shader
+//                shader->uniform("lightCol", (*currCube)->getColor()); //pass light color (magnitude is power) to pixel shader
+//                shader->uniform("dist", (*currCube)->getAOEDist()); //pass the light's area of effect radius to pixel shader
+                (*currPointLight)->renderProxyAOE(); //render the proxy shape
             }
-            else {
-                (*currCube)->renderCube(); //render the proxy shape
+            else if( shader != NULL && deferShaderUsed ) {
+                mDeferredShader.uniform("modelViewMatrix", mCam->getModelViewMatrix() * (*currPointLight)->modelMatrix);
+//                Matrix44f modelMatrix = Matrix44f::identity();
+//                modelMatrix.createTranslation((*currCube)->getPos());
+//                mDeferredShader.uniform("modelMatrix", modelMatrix);  //matrix of object position, rotation, scale
+                (*currPointLight)->renderProxy(); //render the proxy shape
             }
             
         }
@@ -785,9 +822,15 @@ public:
     
     void drawScene()
     {
-        if(fRenderShadowCastersFunc) {fRenderShadowCastersFunc(NULL);}
-        if(fRenderNotShadowCastersFunc) {fRenderNotShadowCastersFunc(NULL);}
-        drawLightMeshes();
+        if(fRenderShadowCastersFunc) {
+            fRenderShadowCastersFunc(NULL);
+        }
+        
+        if(fRenderNotShadowCastersFunc) {
+            fRenderNotShadowCastersFunc(NULL);
+        }
+        
+        drawLightMeshes(NULL, false); //!!need to relook at this for shadow-mapping as I need to pass matrices
     }
     
     void renderLights()
@@ -799,24 +842,51 @@ public:
         glDisable(GL_DEPTH_TEST); //disable depth testing
         glDepthMask(false);
         
-        mLightShader.bind(); //bind point light pixel shader
-        mDeferredFBO.getTexture(2).bind(0); //bind position, normal and color textures from deferred shading pass
-        mLightShader.uniform("positionMap", 0);
-        mDeferredFBO.getTexture(1).bind(1); //bind normal tex
-        mLightShader.uniform("normalMap", 1);
-        mDeferredFBO.getTexture(0).bind(2); //bind color tex
-        mLightShader.uniform("colorMap", 2);
-        mDeferredFBO.getTexture(3).bind(3); //bind attr tex
-        mLightShader.uniform("attrMap", 3);
-        mLightShader.uniform("camPos", mCam->getEyePoint());
+        mLightPointShader.bind(); //bind point light pixel shader
+//        mDeferredFBO.getTexture(2).bind(0); //bind position, normal and color textures from deferred shading pass
+//        mLightPointShader.uniform("positionMap", 0);
+//        mDeferredFBO.getTexture(1).bind(1); //bind normal tex
+//        mLightPointShader.uniform("normalMap", 1);
+//        mDeferredFBO.getTexture(0).bind(2); //bind color tex
+//        mLightPointShader.uniform("colorMap", 2);
+//        mDeferredFBO.getTexture(3).bind(3); //bind attr tex
+//        mLightPointShader.uniform("attrMap", 3);
+//        mLightPointShader.uniform("camPos", mCam->getEyePoint());
         
-        drawLightMeshes( &mLightShader );
+        mDeferredFBO.getTexture(0).bind(0); //bind color tex
+        mDeferredFBO.getTexture(1).bind(1); //bind normal/depth tex
+        mLightPointShader.uniform("projectionMatrix", mCam->getProjectionMatrix());
+        mLightPointShader.uniform("samplerColor", 0);
+        mLightPointShader.uniform("samplerNormalDepth", 1);
+        mLightPointShader.uniform("matProjInverse", mCam->getProjectionMatrix().inverted());
         
-        mLightShader.unbind(); //unbind and reset everything to desired values
-        mDeferredFBO.getTexture(2).unbind(0); //bind position, normal and color textures from deferred shading pass
-        mDeferredFBO.getTexture(1).unbind(1); //bind normal tex
-        mDeferredFBO.getTexture(0).unbind(2); //bind color tex
-        mDeferredFBO.getTexture(3).unbind(3); //bind attr tex
+        /*
+         uniform mat4 modelViewMatrix;
+         uniform mat4 projectionMatrix;
+         uniform sampler2D samplerColor;
+         uniform sampler2D samplerNormalDepth;
+         
+         uniform float lightRadius;
+         uniform float lightIntensity;
+         uniform float viewHeight;
+         uniform float viewWidth;
+         
+         uniform vec3 lightColor;
+         uniform vec3 lightPositionVS;
+         
+         uniform mat4 matProjInverse;
+         */
+        
+        drawLightMeshes( &mLightPointShader, false );
+        
+        mLightPointShader.unbind(); //unbind and reset everything to desired values
+        mDeferredFBO.getTexture(0).unbind(0); //bind color tex
+        mDeferredFBO.getTexture(1).unbind(1); //bind normal/depth tex
+        
+//        mDeferredFBO.getTexture(2).unbind(0); //bind position, normal and color textures from deferred shading pass
+//        mDeferredFBO.getTexture(1).unbind(1); //bind normal tex
+//        mDeferredFBO.getTexture(0).unbind(2); //bind color tex
+//        mDeferredFBO.getTexture(3).unbind(3); //bind attr tex
         
         glDisable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
@@ -840,11 +910,12 @@ public:
             mVBlurShader		= gl::GlslProg( loadResource( RES_GLSL_BLUR_V_VERT ), loadResource( RES_GLSL_BLUR_V_FRAG ) );
         }
         
-        mLightShader		= gl::GlslProg( loadResource( RES_GLSL_LIGHT_VERT ), loadResource( RES_GLSL_LIGHT_FRAG ) );
+        mLightPointShader		= gl::GlslProg( loadResource( RES_GLSL_LIGHT_POINT_VERT ), loadResource( RES_GLSL_LIGHT_POINT_FRAG ) );
         mAlphaToRBG         = gl::GlslProg( loadResource( RES_GLSL_ALPHA_RGB_VERT ), loadResource( RES_GLSL_ALPHA_RGB_FRAG ) );
         
         if (mUseShadows) {
-            mCubeShadowShader   = gl::GlslProg( loadResource( RES_GLSL_CUBESHADOW_VERT ), loadResource( RES_GLSL_CUBESHADOW_FRAG ) );
+            mPointShadowShader   = gl::GlslProg( loadResource( RES_GLSL_POINTSHADOW_VERT ), loadResource( RES_GLSL_POINTSHADOW_FRAG ) );
+            mSpotShadowShader   = gl::GlslProg( loadResource( RES_GLSL_SPOTSHADOW_VERT ), loadResource( RES_GLSL_SPOTSHADOW_FRAG ) );
         }
         
 		mFXAAShader			= gl::GlslProg( loadResource( RES_GLSL_FXAA_VERT ), loadResource( RES_GLSL_FXAA_FRAG ) );
@@ -856,8 +927,9 @@ public:
         gl::Fbo::Format deferredFBO;
         deferredFBO.enableDepthBuffer();
         deferredFBO.setDepthInternalFormat( GL_DEPTH_COMPONENT24 ); //want fbo to have precision depth map as well
-        deferredFBO.setColorInternalFormat( GL_RGBA16F_ARB );
-        deferredFBO.enableColorBuffer( true, 4 ); // create an FBO with four color attachments (basic diffuse, normal/depth view, attribute view, and position view)
+        deferredFBO.setColorInternalFormat( GL_RGBA32F_ARB );
+        deferredFBO.enableColorBuffer( true, 2 ); // create an FBO with two color attachments (basic diffuse and normal/depth view, get position from depth)
+        //deferredFBO.setSamples(4);
         
         gl::Fbo::Format basicFormat;
         basicFormat.enableDepthBuffer(false); //don't need depth "layers"
@@ -880,8 +952,6 @@ public:
             mAllShadowsFBO  = gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   basicFormat );
         }
         
-        mFinalSSFBO		= gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   basicFormat );
-        
         if(fRenderOverlayFunc) {
             mOverlayFBO     = gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   basicFormat );
         }
@@ -890,11 +960,15 @@ public:
             mParticlesFBO   = gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   basicDepthFormat );
         }
         
+        mFinalSSFBO		= gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   basicFormat );
+        
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
     }
     
-    void getCubeVboMesh( gl::VboMesh *vboMesh, const Vec3f &c, const Vec3f &size )
+#pragma mark - static VBO primitive functions
+    
+    static void getCubeVboMesh( gl::VboMesh *vboMesh, const Vec3f &c, const Vec3f &size )
     {
         float sx = size.x * 0.5f;
         float sy = size.y * 0.5f;
@@ -935,6 +1009,119 @@ public:
         vboMesh->bufferIndices(std::vector<uint32_t>(indices, indices + sizeof(indices)/sizeof(indices[0])));
     }
     
+    //modfied from Stephen Schieberl's MeshHelper class https://github.com/bantherewind/Cinder-MeshHelper
+    static void getSphereVboMesh( gl::VboMesh *vboMesh, const Vec3f &center, const float radius, const Vec2i resolution = Vec2i(6, 6) )
+    {
+        vector<uint32_t> indices;
+        vector<Vec3f> normals;
+        vector<Vec3f> positions;
+        
+        float step = (float)M_PI / (float)resolution.y;
+        float delta = ((float)M_PI * 2.0f) / (float)resolution.x;
+        
+        int32_t p = 0;
+        for ( float phi = 0.0f; p <= resolution.y; p++, phi += step ) {
+            int32_t t = 0;
+            
+            uint32_t a = (uint32_t)( ( p + 0 ) * resolution.x );
+            uint32_t b = (uint32_t)( ( p + 1 ) * resolution.x );
+            
+            for ( float theta = delta; t < resolution.x; t++, theta += delta ) {
+                float sinPhi = math<float>::sin( phi );
+                float x = sinPhi * math<float>::cos( theta );
+                float y = sinPhi * math<float>::sin( theta );
+                float z = -math<float>::cos( phi );
+                Vec3f position( x, y, z );
+                position = (position * radius) + center;
+                Vec3f normal = position.normalized();
+                
+                normals.push_back( normal );
+                positions.push_back( position );
+                
+                uint32_t n = (uint32_t)( t + 1 >= resolution.x ? 0 : t + 1 );
+                indices.push_back( a + t );
+                indices.push_back( b + t );
+                indices.push_back( a + n );
+                indices.push_back( a + n );
+                indices.push_back( b + t );
+                indices.push_back( b + n );
+            }
+        }
+        
+        for ( vector<uint32_t>::iterator iter = indices.begin(); iter != indices.end(); ) {
+            if ( *iter < positions.size() ) {
+                ++iter;
+            } else {
+                iter = indices.erase( iter );
+            }
+        }
+        
+        gl::VboMesh::Layout layout;
+        layout.setStaticPositions();
+        layout.setStaticIndices();
+        layout.setStaticNormals();
+        
+        *vboMesh = gl::VboMesh( positions.size(), indices.size(), layout, GL_TRIANGLES );
+        vboMesh->bufferPositions( positions );
+        vboMesh->bufferNormals( normals );
+        vboMesh->bufferIndices( indices );
+        
+        indices.clear();
+        normals.clear();
+        positions.clear();
+    }
+    
+    //ogre3D implementation
+    static void getConeVboMesh( gl::VboMesh *vboMesh, const Vec3f &pointPos, const float &coneHeight, const float &coneRadius, const int numSegments )
+    {
+        vector<uint32_t> indices;
+        vector<Vec3f> normals;
+        vector<Vec3f> positions;
+        
+        //Positions : cone head and base
+        positions.push_back( pointPos + Vec3f(0.0f, 0.0f, 0.0f) );
+        normals.push_back( Vec3f(0, 1, 0) );
+        
+        //Base :
+        Vec3f basePoint = Vec3f( pointPos.x, -coneHeight, pointPos.z );
+        float fDeltaBaseAngle = (2 * M_PI) / numSegments;
+        for (int i=0; i<numSegments; i++)
+        {
+            float angle = i * fDeltaBaseAngle;
+            Vec3f vertPos = pointPos + Vec3f(coneRadius * cosf(angle), -coneHeight, coneRadius * sinf(angle));
+            positions.push_back( vertPos );
+            normals.push_back( (vertPos - basePoint).normalized() );
+        }
+        
+        //Indices :
+        //Cone head to vertices
+        for (int i=0; i<numSegments; i++)
+        {
+            indices.push_back( 0 );
+            indices.push_back( (i%numSegments) + 1 );
+            indices.push_back( ((i+1)%numSegments) + 1 );
+        }
+        //Cone base
+        for (int i=0; i<numSegments-2; i++)
+        {
+            indices.push_back( 1 );
+            indices.push_back( i+3 );
+            indices.push_back( i+2 );
+        }
+        
+        gl::VboMesh::Layout layout;
+        layout.setStaticPositions();
+        layout.setStaticIndices();
+        layout.setStaticNormals();
+        
+        *vboMesh = gl::VboMesh( positions.size(), indices.size(), layout, GL_TRIANGLES );
+        vboMesh->bufferPositions( positions );
+        vboMesh->bufferNormals( normals );
+        vboMesh->bufferIndices( indices );
+        
+        indices.clear();
+        normals.clear();
+        positions.clear();
+    }
+    
 };
-
-#endif

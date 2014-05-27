@@ -90,7 +90,7 @@ void _TBOX_PREFIX_App::update()
 {
     //moving some lights for effect
     int counter = 0;
-    for( vector<Light_PS*>::iterator lightIter = mDeferredRenderer.mCubeLights.begin(); lightIter != mDeferredRenderer.mCubeLights.end(); lightIter++ ) {
+    for( vector<Light_Point*>::iterator lightIter = mDeferredRenderer.mCubeLights.begin(); lightIter != mDeferredRenderer.mCubeLights.end(); lightIter++ ) {
         (*lightIter)->setPos(Vec3f( math<float>::sin(getElapsedSeconds() + (M_PI * counter)) * 3.0f, 3.0f, math<float>::cos(getElapsedSeconds() + (M_PI * counter)) * 3.0f ));
         counter++;
     }

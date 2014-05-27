@@ -2,8 +2,6 @@
 #extension GL_EXT_gpu_shader4 : require
 
 varying vec4 position_cs;
-varying vec3 normal_cs;
-varying vec3 color;
 
 uniform samplerCubeShadow shadow;
 uniform mat4x4 camera_view_matrix_inv;
