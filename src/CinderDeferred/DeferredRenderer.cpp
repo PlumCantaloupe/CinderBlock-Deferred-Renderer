@@ -24,8 +24,8 @@ const int DeferredRenderer::getNumSpotLights(){
     return mSpotLights.size();
 };
 
-void DeferredRenderer::setup(   const boost::function<void(gl::GlslProg*)> renderShadowCastFunc,
-                                const boost::function<void(gl::GlslProg*)> renderObjFunc,
+void DeferredRenderer::setup(   const boost::function<void(int, gl::GlslProg*)> renderShadowCastFunc,
+                                const boost::function<void(int, gl::GlslProg*)> renderObjFunc,
                                 const boost::function<void()> renderOverlayFunc,
                                 const boost::function<void()> renderParticlesFunc,
                                 Camera    *cam,
@@ -36,9 +36,9 @@ void DeferredRenderer::setup(   const boost::function<void(gl::GlslProg*)> rende
                                 BOOL      useFXAA )
 {
     //create cube VBO reference for lights
-    getCubeVboMesh( &mCubeVBOMesh, Vec3f(0.0f, 0.0f, 0.0f), Vec3f(1.0f, 1.0f, 1.0f) );
-    getConeVboMesh( &mConeVBOMesh, Vec3f(0.0f, 1.0f, 0.0f), 1.0f, 0.5f, 10);
-    getSphereVboMesh( &mSphereVBOMesh, Vec3f(0.0f, 0.0f, 0.0f), 0.5f, Vec2i(10,10));
+    DeferredModel::getCubeVboMesh( &mCubeVBOMesh, Vec3f(0.0f, 0.0f, 0.0f), Vec3f(1.0f, 1.0f, 1.0f) );
+    DeferredModel::getConeVboMesh( &mConeVBOMesh, Vec3f(0.0f, 1.0f, 0.0f), 1.0f, 0.5f, 10);
+    DeferredModel::getSphereVboMesh( &mSphereVBOMesh, Vec3f(0.0f, 0.0f, 0.0f), 0.5f, Vec2i(10,10));
     
     fRenderShadowCastersFunc = renderShadowCastFunc;
     fRenderNotShadowCastersFunc = renderObjFunc;
@@ -150,7 +150,7 @@ void DeferredRenderer::createShadowMaps()
             glMultMatrixf((*currPointLight)->mShadowCam.getModelViewMatrix());
             
             if (fRenderShadowCastersFunc) {
-                fRenderShadowCastersFunc( NULL );
+                fRenderShadowCastersFunc( SHADER_TYPE_NONE, NULL );
             }
         }
         
@@ -174,7 +174,7 @@ void DeferredRenderer::createShadowMaps()
         gl::setMatrices((*currSpotLight)->mShadowCam);
         
         if (fRenderShadowCastersFunc) {
-            fRenderShadowCastersFunc( NULL );
+            fRenderShadowCastersFunc( SHADER_TYPE_NONE, NULL );
         }
         
         (*currSpotLight)->mDepthFBO.unbindFramebuffer();
@@ -298,12 +298,12 @@ void DeferredRenderer::renderDeferredFBO()
     normalMatrix.transpose();
     mDeferredShader.uniform("normalMatrix", normalMatrix ); //getInverse( object modelMatrix ).transpose()
     
-    drawLightMeshes( &mDeferredShader, true );
+    drawLightMeshes( SHADER_TYPE_DEFERRED, &mDeferredShader );
     
     mDeferredShader.uniform("modelViewMatrix", mCam->getModelViewMatrix());
     
-    if (fRenderShadowCastersFunc) {fRenderShadowCastersFunc(&mDeferredShader);}
-    if (fRenderNotShadowCastersFunc) {fRenderNotShadowCastersFunc(&mDeferredShader);}
+    if (fRenderShadowCastersFunc) {fRenderShadowCastersFunc( SHADER_TYPE_DEFERRED, &mDeferredShader);}
+    if (fRenderNotShadowCastersFunc) {fRenderNotShadowCastersFunc( SHADER_TYPE_DEFERRED, &mDeferredShader);}
     
     mDeferredShader.unbind();
     mDeferredFBO.unbindFramebuffer();
@@ -622,56 +622,48 @@ void DeferredRenderer::renderQuad( const int renderType, Rectf renderQuad, const
     }
 }
 
-void DeferredRenderer::drawLightMeshes(gl::GlslProg* shader, BOOL deferShaderUsed )
+void DeferredRenderer::drawLightMeshes( int shaderType, gl::GlslProg* shader )
 {
     //point lights
     for(vector<Light_Point*>::iterator currPointLight = mPointLights.begin(); currPointLight != mPointLights.end(); ++currPointLight) {
-        if ( shader != NULL && !deferShaderUsed ) {
-            mLightPointShader.uniform("viewHeight", mDeferredFBO.getHeight());
-            mLightPointShader.uniform("viewWidth", mDeferredFBO.getWidth());
-            mLightPointShader.uniform("lightColor", (*currPointLight)->getColor());
-            mLightPointShader.uniform("lightRadius", (*currPointLight)->getLightMaskRadius());
-            mLightPointShader.uniform("lightIntensity", (*currPointLight)->getIntensity());
-//                Matrix44f lightPosMat = Matrix44f::identity();
-//                lightPosMat.setTranslate((*currCube)->getPos());
-//                Matrix44f camPosMat = Matrix44f::identity();
-//                camPosMat.setTranslate(mCam->getEyePoint());
-//                lightPosMat = lightPosMat * camPosMat.inverted();
-            mLightPointShader.uniform("lightPositionVS", mCam->getModelViewMatrix().transformPointAffine( (*currPointLight)->getPos() ));
-            mLightPointShader.uniform("modelViewMatrix", mCam->getModelViewMatrix() * (*currPointLight)->modelMatrixAOE );
-        
-//                console() << mCam->getModelViewMatrix() << "\n";
-//                console() << mCam->getProjectionMatrix() << "\n";
-//                console() << mCam->getModelViewMatrix() * (*currCube)->modelMatrixAOE << "\n";
-//                console() << mCam->getModelViewMatrix().transformPointAffine( (*currCube)->getPos() ) << "\n";
-            
-//                shader->uniform("lightPos", mCam->getModelViewMatrix().transformPointAffine( (*currCube)->getPos() ) ); //pass light pos to pixel shader
-//                shader->uniform("lightCol", (*currCube)->getColor()); //pass light color (magnitude is power) to pixel shader
-//                shader->uniform("dist", (*currCube)->getAOEDist()); //pass the light's area of effect radius to pixel shader
-            (*currPointLight)->renderProxyAOE(); //render the proxy shape
+        if ( shader != NULL ) {
+            switch (shaderType) {
+                case SHADER_TYPE_DEFERRED: {
+                    mDeferredShader.uniform("modelViewMatrix", mCam->getModelViewMatrix() * (*currPointLight)->modelMatrix);
+                    (*currPointLight)->renderProxy(); //render the proxy shape
+                }
+                    break;
+                case SHADER_TYPE_LIGHT: {
+                    mLightPointShader.uniform("viewHeight", mDeferredFBO.getHeight());
+                    mLightPointShader.uniform("viewWidth", mDeferredFBO.getWidth());
+                    mLightPointShader.uniform("lightColor", (*currPointLight)->getColor());
+                    mLightPointShader.uniform("lightRadius", (*currPointLight)->getLightMaskRadius());
+                    mLightPointShader.uniform("lightIntensity", (*currPointLight)->getIntensity());
+                    mLightPointShader.uniform("lightPositionVS", mCam->getModelViewMatrix().transformPointAffine( (*currPointLight)->getPos() ));
+                    mLightPointShader.uniform("modelViewMatrix", mCam->getModelViewMatrix() * (*currPointLight)->modelMatrixAOE );
+                    
+                    (*currPointLight)->renderProxyAOE(); //render the proxy shape
+                }
+                    break;
+                default:
+                    console() << "warning: no shader type selected \n";
+                    break;
+            }
         }
-        else if( shader != NULL && deferShaderUsed ) {
-            mDeferredShader.uniform("modelViewMatrix", mCam->getModelViewMatrix() * (*currPointLight)->modelMatrix);
-//                Matrix44f modelMatrix = Matrix44f::identity();
-//                modelMatrix.createTranslation((*currCube)->getPos());
-//                mDeferredShader.uniform("modelMatrix", modelMatrix);  //matrix of object position, rotation, scale
-            (*currPointLight)->renderProxy(); //render the proxy shape
-        }
-        
     }
 }
 
 void DeferredRenderer::drawScene()
 {
     if(fRenderShadowCastersFunc) {
-        fRenderShadowCastersFunc(NULL);
+        fRenderShadowCastersFunc(SHADER_TYPE_NONE, NULL);
     }
     
     if(fRenderNotShadowCastersFunc) {
-        fRenderNotShadowCastersFunc(NULL);
+        fRenderNotShadowCastersFunc(SHADER_TYPE_NONE, NULL);
     }
     
-    drawLightMeshes(NULL, false); //!!need to relook at this for shadow-mapping as I need to pass matrices
+    drawLightMeshes( SHADER_TYPE_LIGHT, NULL ); //!!need to relook at this for shadow-mapping as I need to pass matrices
 }
 
 void DeferredRenderer::renderLights()
@@ -691,7 +683,7 @@ void DeferredRenderer::renderLights()
     mLightPointShader.uniform("samplerNormalDepth", 1);
     mLightPointShader.uniform("matProjInverse", mCam->getProjectionMatrix().inverted());
     
-    drawLightMeshes( &mLightPointShader, false );
+    drawLightMeshes( SHADER_TYPE_LIGHT, &mLightPointShader );
     
     mLightPointShader.unbind(); //unbind and reset everything to desired values
     mDeferredFBO.getTexture(0).unbind(0); //bind color tex
@@ -773,162 +765,4 @@ void DeferredRenderer::initFBOs()
     
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-}
-
-#pragma mark - static VBO primitive functions
-
-void DeferredRenderer::getCubeVboMesh( gl::VboMesh *vboMesh, const Vec3f &c, const Vec3f &size )
-{
-    float sx = size.x * 0.5f;
-    float sy = size.y * 0.5f;
-    float sz = size.z * 0.5f;
-    Vec3f vertices[24]={
-        Vec3f(c.x+1.0f*sx,c.y+1.0f*sy,c.z+1.0f*sz),     Vec3f(c.x+1.0f*sx,c.y+-1.0f*sy,c.z+1.0f*sz),    Vec3f(c.x+1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz),	// +X
-        Vec3f(c.x+1.0f*sx,c.y+1.0f*sy,c.z+1.0f*sz),     Vec3f(c.x+1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+1.0f*sy,c.z+1.0f*sz),	// +Y
-        Vec3f(c.x+1.0f*sx,c.y+1.0f*sy,c.z+1.0f*sz),     Vec3f(c.x+-1.0f*sx,c.y+1.0f*sy,c.z+1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+1.0f*sz),	Vec3f(c.x+1.0f*sx,c.y+-1.0f*sy,c.z+1.0f*sz),	// +Z
-        Vec3f(c.x+-1.0f*sx,c.y+1.0f*sy,c.z+1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+1.0f*sz),	// -X
-        Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+1.0f*sx,c.y+-1.0f*sy,c.z+1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+1.0f*sz),	// -Y
-        Vec3f(c.x+1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz)     // -Z
-    };
-    
-    Vec3f normals[24]={ Vec3f(1,0,0),   Vec3f(1,0,0),   Vec3f(1,0,0),   Vec3f(1,0,0),
-        Vec3f(0,1,0),	Vec3f(0,1,0),	Vec3f(0,1,0),	Vec3f(0,1,0),
-        Vec3f(0,0,1),	Vec3f(0,0,1),	Vec3f(0,0,1),	Vec3f(0,0,1),
-        Vec3f(-1,0,0),	Vec3f(-1,0,0),	Vec3f(-1,0,0),	Vec3f(-1,0,0),
-        Vec3f(0,-1,0),	Vec3f(0,-1,0),  Vec3f(0,-1,0),  Vec3f(0,-1,0),
-        Vec3f(0,0,-1),	Vec3f(0,0,-1),	Vec3f(0,0,-1),	Vec3f(0,0,-1)
-    };
-    
-    uint32_t indices[6*6] = {   0, 1, 2, 0, 2, 3,
-        4, 5, 6, 4, 6, 7,
-        8, 9,10, 8, 10,11,
-        12,13,14,12,14,15,
-        16,17,18,16,18,19,
-        20,21,22,20,22,23
-    };
-    
-    gl::VboMesh::Layout layout;
-    layout.setStaticPositions();
-    layout.setStaticIndices();
-    layout.setStaticNormals();
-    
-    *vboMesh = gl::VboMesh( 24, 36, layout, GL_TRIANGLES );
-    vboMesh->bufferPositions(std::vector<Vec3f>(vertices, vertices + sizeof(vertices)/sizeof(vertices[0])));
-    vboMesh->bufferNormals(std::vector<Vec3f>(normals, normals + sizeof(normals)/sizeof(normals[0])));
-    vboMesh->bufferIndices(std::vector<uint32_t>(indices, indices + sizeof(indices)/sizeof(indices[0])));
-}
-
-//modfied from Stephen Schieberl's MeshHelper class https://github.com/bantherewind/Cinder-MeshHelper
-void DeferredRenderer::getSphereVboMesh( gl::VboMesh *vboMesh, const Vec3f &center, const float radius, const Vec2i resolution )
-{
-    vector<uint32_t> indices;
-    vector<Vec3f> normals;
-    vector<Vec3f> positions;
-    
-    float step = (float)M_PI / (float)resolution.y;
-    float delta = ((float)M_PI * 2.0f) / (float)resolution.x;
-    
-    int32_t p = 0;
-    for ( float phi = 0.0f; p <= resolution.y; p++, phi += step ) {
-        int32_t t = 0;
-        
-        uint32_t a = (uint32_t)( ( p + 0 ) * resolution.x );
-        uint32_t b = (uint32_t)( ( p + 1 ) * resolution.x );
-        
-        for ( float theta = delta; t < resolution.x; t++, theta += delta ) {
-            float sinPhi = math<float>::sin( phi );
-            float x = sinPhi * math<float>::cos( theta );
-            float y = sinPhi * math<float>::sin( theta );
-            float z = -math<float>::cos( phi );
-            Vec3f position( x, y, z );
-            position = (position * radius) + center;
-            Vec3f normal = position.normalized();
-            
-            normals.push_back( normal );
-            positions.push_back( position );
-            
-            uint32_t n = (uint32_t)( t + 1 >= resolution.x ? 0 : t + 1 );
-            indices.push_back( a + t );
-            indices.push_back( b + t );
-            indices.push_back( a + n );
-            indices.push_back( a + n );
-            indices.push_back( b + t );
-            indices.push_back( b + n );
-        }
-    }
-    
-    for ( vector<uint32_t>::iterator iter = indices.begin(); iter != indices.end(); ) {
-        if ( *iter < positions.size() ) {
-            ++iter;
-        } else {
-            iter = indices.erase( iter );
-        }
-    }
-    
-    gl::VboMesh::Layout layout;
-    layout.setStaticPositions();
-    layout.setStaticIndices();
-    layout.setStaticNormals();
-    
-    *vboMesh = gl::VboMesh( positions.size(), indices.size(), layout, GL_TRIANGLES );
-    vboMesh->bufferPositions( positions );
-    vboMesh->bufferNormals( normals );
-    vboMesh->bufferIndices( indices );
-    
-    indices.clear();
-    normals.clear();
-    positions.clear();
-}
-
-//ogre3D implementation
-void DeferredRenderer::getConeVboMesh( gl::VboMesh *vboMesh, const Vec3f &pointPos, const float &coneHeight, const float &coneRadius, const int numSegments )
-{
-    vector<uint32_t> indices;
-    vector<Vec3f> normals;
-    vector<Vec3f> positions;
-    
-    //Positions : cone head and base
-    positions.push_back( pointPos + Vec3f(0.0f, 0.0f, 0.0f) );
-    normals.push_back( Vec3f(0, 1, 0) );
-    
-    //Base :
-    Vec3f basePoint = Vec3f( pointPos.x, -coneHeight, pointPos.z );
-    float fDeltaBaseAngle = (2 * M_PI) / numSegments;
-    for (int i=0; i<numSegments; i++)
-    {
-        float angle = i * fDeltaBaseAngle;
-        Vec3f vertPos = pointPos + Vec3f(coneRadius * cosf(angle), -coneHeight, coneRadius * sinf(angle));
-        positions.push_back( vertPos );
-        normals.push_back( (vertPos - basePoint).normalized() );
-    }
-    
-    //Indices :
-    //Cone head to vertices
-    for (int i=0; i<numSegments; i++)
-    {
-        indices.push_back( 0 );
-        indices.push_back( (i%numSegments) + 1 );
-        indices.push_back( ((i+1)%numSegments) + 1 );
-    }
-    //Cone base
-    for (int i=0; i<numSegments-2; i++)
-    {
-        indices.push_back( 1 );
-        indices.push_back( i+3 );
-        indices.push_back( i+2 );
-    }
-    
-    gl::VboMesh::Layout layout;
-    layout.setStaticPositions();
-    layout.setStaticIndices();
-    layout.setStaticNormals();
-    
-    *vboMesh = gl::VboMesh( positions.size(), indices.size(), layout, GL_TRIANGLES );
-    vboMesh->bufferPositions( positions );
-    vboMesh->bufferNormals( normals );
-    vboMesh->bufferIndices( indices );
-    
-    indices.clear();
-    normals.clear();
-    positions.clear();
 }

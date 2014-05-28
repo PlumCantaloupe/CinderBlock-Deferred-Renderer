@@ -31,10 +31,3 @@ struct DeferredMaterial
     float shininess;
     float additiveSpecular;
 };
-
-//some commonly used base materials (WIP)
-static const DeferredMaterial DEFERRED_MATERIAL_PLASTIC_RED             = DeferredMaterial( Color(1.0, 0.0, 0.0), Color(1.0, 0.0, 0.0), Color(1.0, 0.0, 0.0), 0.0f, 0.0f );
-static const DeferredMaterial DEFERRED_MATERIAL_PLASTIC_GREEN           = DeferredMaterial( Color(1.0, 0.0, 0.0), Color(1.0, 0.0, 0.0), Color(1.0, 0.0, 0.0), 0.0f, 0.0f );
-static const DeferredMaterial DEFERRED_MATERIAL_PLASTIC_BLUE            = DeferredMaterial( Color(1.0, 0.0, 0.0), Color(1.0, 0.0, 0.0), Color(1.0, 0.0, 0.0), 0.0f, 0.0f );
-static const DeferredMaterial DEFERRED_MATERIAL_PLASTIC_METAL_ROUGH     = DeferredMaterial( Color(1.0, 0.0, 0.0), Color(1.0, 0.0, 0.0), Color(1.0, 0.0, 0.0), 0.0f, 0.0f );
-static const DeferredMaterial DEFERRED_MATERIAL_PLASTIC_METAL_SMOOTH    = DeferredMaterial( Color(1.0, 0.0, 0.0), Color(1.0, 0.0, 0.0), Color(1.0, 0.0, 0.0), 0.0f, 0.0f );

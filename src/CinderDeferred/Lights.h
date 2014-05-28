@@ -21,9 +21,6 @@ using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-//static const float  LIGHT_CUTOFF_DEFAULT = 0.01f;        //light intensity cutoff point
-static const float  LIGHT_BRIGHTNESS_DEFAULT = 1.0f;    //brightness of lights
-
 //Light Cube Class
 class Light_Point
 {

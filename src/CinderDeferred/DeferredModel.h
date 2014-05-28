@@ -123,4 +123,200 @@ class DeferredModel
      uniform float shininess;
      uniform float additiveSpecular;
      */
+    
+#pragma mark - static VBO primitive functions
+    
+    static void getPlaneVboMesh( gl::VboMesh *vboMesh, const Vec3f &c, const float size )
+    {
+        vector<uint32_t> indices;
+        vector<Vec3f> normals;
+        vector<Vec3f> positions;
+        
+        positions.push_back( c + Vec3f(-size/2, 0, -size/2) );  //left top
+        positions.push_back( c + Vec3f(-size/2, 0, size/2) );   //left bottom
+        positions.push_back( c + Vec3f(size/2, 0, -size/2) );   //right top
+        positions.push_back( c + Vec3f(size/2, 0, size/2) );    //right bottom
+        
+        normals.push_back( Vec3f(0,1,0) );
+        normals.push_back( Vec3f(0,1,0) );
+        normals.push_back( Vec3f(0,1,0) );
+        normals.push_back( Vec3f(0,1,0) );
+        
+        indices.push_back( 0 );
+        indices.push_back( 1 );
+        indices.push_back( 2 );
+        indices.push_back( 2 );
+        indices.push_back( 1 );
+        indices.push_back( 3 );
+        
+        gl::VboMesh::Layout layout;
+        layout.setStaticPositions();
+        layout.setStaticIndices();
+        layout.setStaticNormals();
+        
+        *vboMesh = gl::VboMesh( positions.size(), indices.size(), layout, GL_TRIANGLES );
+        vboMesh->bufferPositions( positions );
+        vboMesh->bufferNormals( normals );
+        vboMesh->bufferIndices( indices );
+        
+        indices.clear();
+        normals.clear();
+        positions.clear();
+    }
+    
+    static void getCubeVboMesh( gl::VboMesh *vboMesh, const Vec3f &c, const Vec3f &size )
+    {
+        float sx = size.x * 0.5f;
+        float sy = size.y * 0.5f;
+        float sz = size.z * 0.5f;
+        Vec3f vertices[24]={
+            Vec3f(c.x+1.0f*sx,c.y+1.0f*sy,c.z+1.0f*sz),     Vec3f(c.x+1.0f*sx,c.y+-1.0f*sy,c.z+1.0f*sz),    Vec3f(c.x+1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz),	// +X
+            Vec3f(c.x+1.0f*sx,c.y+1.0f*sy,c.z+1.0f*sz),     Vec3f(c.x+1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+1.0f*sy,c.z+1.0f*sz),	// +Y
+            Vec3f(c.x+1.0f*sx,c.y+1.0f*sy,c.z+1.0f*sz),     Vec3f(c.x+-1.0f*sx,c.y+1.0f*sy,c.z+1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+1.0f*sz),	Vec3f(c.x+1.0f*sx,c.y+-1.0f*sy,c.z+1.0f*sz),	// +Z
+            Vec3f(c.x+-1.0f*sx,c.y+1.0f*sy,c.z+1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+1.0f*sz),	// -X
+            Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+1.0f*sx,c.y+-1.0f*sy,c.z+1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+1.0f*sz),	// -Y
+            Vec3f(c.x+1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+-1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+-1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz),	Vec3f(c.x+1.0f*sx,c.y+1.0f*sy,c.z+-1.0f*sz)     // -Z
+        };
+        
+        Vec3f normals[24]={ Vec3f(1,0,0),   Vec3f(1,0,0),   Vec3f(1,0,0),   Vec3f(1,0,0),
+            Vec3f(0,1,0),	Vec3f(0,1,0),	Vec3f(0,1,0),	Vec3f(0,1,0),
+            Vec3f(0,0,1),	Vec3f(0,0,1),	Vec3f(0,0,1),	Vec3f(0,0,1),
+            Vec3f(-1,0,0),	Vec3f(-1,0,0),	Vec3f(-1,0,0),	Vec3f(-1,0,0),
+            Vec3f(0,-1,0),	Vec3f(0,-1,0),  Vec3f(0,-1,0),  Vec3f(0,-1,0),
+            Vec3f(0,0,-1),	Vec3f(0,0,-1),	Vec3f(0,0,-1),	Vec3f(0,0,-1)
+        };
+        
+        uint32_t indices[6*6] = {   0, 1, 2, 0, 2, 3,
+            4, 5, 6, 4, 6, 7,
+            8, 9,10, 8, 10,11,
+            12,13,14,12,14,15,
+            16,17,18,16,18,19,
+            20,21,22,20,22,23
+        };
+        
+        gl::VboMesh::Layout layout;
+        layout.setStaticPositions();
+        layout.setStaticIndices();
+        layout.setStaticNormals();
+        
+        *vboMesh = gl::VboMesh( 24, 36, layout, GL_TRIANGLES );
+        vboMesh->bufferPositions(std::vector<Vec3f>(vertices, vertices + sizeof(vertices)/sizeof(vertices[0])));
+        vboMesh->bufferNormals(std::vector<Vec3f>(normals, normals + sizeof(normals)/sizeof(normals[0])));
+        vboMesh->bufferIndices(std::vector<uint32_t>(indices, indices + sizeof(indices)/sizeof(indices[0])));
+    }
+    
+    //modfied from Stephen Schieberl's MeshHelper class https://github.com/bantherewind/Cinder-MeshHelper
+    static void getSphereVboMesh( gl::VboMesh *vboMesh, const Vec3f &center, const float radius, const Vec2i resolution )
+    {
+        vector<uint32_t> indices;
+        vector<Vec3f> normals;
+        vector<Vec3f> positions;
+        
+        float step = (float)M_PI / (float)resolution.y;
+        float delta = ((float)M_PI * 2.0f) / (float)resolution.x;
+        
+        int32_t p = 0;
+        for ( float phi = 0.0f; p <= resolution.y; p++, phi += step ) {
+            int32_t t = 0;
+            
+            uint32_t a = (uint32_t)( ( p + 0 ) * resolution.x );
+            uint32_t b = (uint32_t)( ( p + 1 ) * resolution.x );
+            
+            for ( float theta = delta; t < resolution.x; t++, theta += delta ) {
+                float sinPhi = math<float>::sin( phi );
+                float x = sinPhi * math<float>::cos( theta );
+                float y = sinPhi * math<float>::sin( theta );
+                float z = -math<float>::cos( phi );
+                Vec3f position( x, y, z );
+                position = (position * radius) + center;
+                Vec3f normal = position.normalized();
+                
+                normals.push_back( normal );
+                positions.push_back( position );
+                
+                uint32_t n = (uint32_t)( t + 1 >= resolution.x ? 0 : t + 1 );
+                indices.push_back( a + t );
+                indices.push_back( b + t );
+                indices.push_back( a + n );
+                indices.push_back( a + n );
+                indices.push_back( b + t );
+                indices.push_back( b + n );
+            }
+        }
+        
+        for ( vector<uint32_t>::iterator iter = indices.begin(); iter != indices.end(); ) {
+            if ( *iter < positions.size() ) {
+                ++iter;
+            } else {
+                iter = indices.erase( iter );
+            }
+        }
+        
+        gl::VboMesh::Layout layout;
+        layout.setStaticPositions();
+        layout.setStaticIndices();
+        layout.setStaticNormals();
+        
+        *vboMesh = gl::VboMesh( positions.size(), indices.size(), layout, GL_TRIANGLES );
+        vboMesh->bufferPositions( positions );
+        vboMesh->bufferNormals( normals );
+        vboMesh->bufferIndices( indices );
+        
+        indices.clear();
+        normals.clear();
+        positions.clear();
+    }
+    
+    //ogre3D implementation
+    static void getConeVboMesh( gl::VboMesh *vboMesh, const Vec3f &pointPos, const float &coneHeight, const float &coneRadius, const int numSegments )
+    {
+        vector<uint32_t> indices;
+        vector<Vec3f> normals;
+        vector<Vec3f> positions;
+        
+        //Positions : cone head and base
+        positions.push_back( pointPos + Vec3f(0.0f, 0.0f, 0.0f) );
+        normals.push_back( Vec3f(0, 1, 0) );
+        
+        //Base :
+        Vec3f basePoint = Vec3f( pointPos.x, -coneHeight, pointPos.z );
+        float fDeltaBaseAngle = (2 * M_PI) / numSegments;
+        for (int i=0; i<numSegments; i++)
+        {
+            float angle = i * fDeltaBaseAngle;
+            Vec3f vertPos = pointPos + Vec3f(coneRadius * cosf(angle), -coneHeight, coneRadius * sinf(angle));
+            positions.push_back( vertPos );
+            normals.push_back( (vertPos - basePoint).normalized() );
+        }
+        
+        //Indices :
+        //Cone head to vertices
+        for (int i=0; i<numSegments; i++)
+        {
+            indices.push_back( 0 );
+            indices.push_back( (i%numSegments) + 1 );
+            indices.push_back( ((i+1)%numSegments) + 1 );
+        }
+        //Cone base
+        for (int i=0; i<numSegments-2; i++)
+        {
+            indices.push_back( 1 );
+            indices.push_back( i+3 );
+            indices.push_back( i+2 );
+        }
+        
+        gl::VboMesh::Layout layout;
+        layout.setStaticPositions();
+        layout.setStaticIndices();
+        layout.setStaticNormals();
+        
+        *vboMesh = gl::VboMesh( positions.size(), indices.size(), layout, GL_TRIANGLES );
+        vboMesh->bufferPositions( positions );
+        vboMesh->bufferNormals( normals );
+        vboMesh->bufferIndices( indices );
+        
+        indices.clear();
+        normals.clear();
+        positions.clear();
+    }
 };

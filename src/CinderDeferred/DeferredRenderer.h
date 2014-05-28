@@ -8,11 +8,7 @@
 
 /*
  TODO:
- - Want framework independence
- - VboMesh Class
- - Fbo Class
- - Shader Class
- - Conversion function (e.g. Vec3f to float[3] and vice versa)
+ - Platform agnostic
  */
 
 #pragma once
@@ -33,6 +29,7 @@
 #include "boost/lambda/lambda.hpp"
 
 #include "Lights.h"
+#include "DeferredModel.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -53,8 +50,8 @@ public:
         FBO_PARTICLES
     };
     
-    boost::function<void(gl::GlslProg*)> fRenderShadowCastersFunc;
-    boost::function<void(gl::GlslProg*)> fRenderNotShadowCastersFunc;
+    boost::function<void(int, gl::GlslProg*)> fRenderShadowCastersFunc;
+    boost::function<void(int, gl::GlslProg*)> fRenderNotShadowCastersFunc;
     boost::function<void()> fRenderOverlayFunc;
     boost::function<void()> fRenderParticlesFunc;
     Camera              *mCam;
@@ -116,13 +113,21 @@ private:
     BOOL    mUseFXAA;
     
 public:
+    enum {
+        SHADER_TYPE_NONE,
+        SHADER_TYPE_DEFERRED,
+        SHADER_TYPE_LIGHT,
+        SHADER_TYPE_SHADOW,
+        NUM_SHADER_TYPES
+    };
+    
     vector<Light_Point*>* getPointLightsRef();
     const int getNumPointLights();
     vector<Light_Spot*>* getSpotLightsRef();
     const int getNumSpotLights();
     
-    void setup( const boost::function<void(gl::GlslProg*)> renderShadowCastFunc,
-               const boost::function<void(gl::GlslProg*)> renderObjFunc,
+    void setup( const boost::function<void(int, gl::GlslProg*)> renderShadowCastFunc,
+               const boost::function<void(int, gl::GlslProg*)> renderObjFunc,
                const boost::function<void()> renderOverlayFunc,
                const boost::function<void()> renderParticlesFunc,
                Camera    *cam,
@@ -143,21 +148,10 @@ public:
     void pingPongBlurSSAO();
     void renderFullScreenQuad( const int renderType, const BOOL autoPrepareScene = true  );
     void renderQuad( const int renderType, Rectf renderQuad, const BOOL autoPrepareScene = true  );
-    void drawLightMeshes(gl::GlslProg* shader = NULL, BOOL deferShaderUsed = false);
+    void drawLightMeshes(  int shaderType = SHADER_TYPE_NONE, gl::GlslProg* shader = NULL );
     void drawScene();
     void renderLights();
     void initTextures();
     void initShaders();
     void initFBOs();
-    
-#pragma mark - static VBO primitive functions
-    
-    static void getCubeVboMesh( gl::VboMesh *vboMesh, const Vec3f &c, const Vec3f &size );
-    
-    //modfied from Stephen Schieberl's MeshHelper class https://github.com/bantherewind/Cinder-MeshHelper
-    static void getSphereVboMesh( gl::VboMesh *vboMesh, const Vec3f &center, const float radius, const Vec2i resolution = Vec2i(6, 6) );
-    
-    //ogre3D implementation
-    static void getConeVboMesh( gl::VboMesh *vboMesh, const Vec3f &pointPos, const float &coneHeight, const float &coneRadius, const int numSegments );
-    
 };
