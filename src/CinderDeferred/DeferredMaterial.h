@@ -16,6 +16,9 @@ using namespace std;
 
 struct DeferredMaterial
 {
+    DeferredMaterial()
+    {}
+    
     DeferredMaterial(const Color diffuse, const Color specular, const Color emissive, const float shiney, const float addSpec)
     {
         diffuseCol = diffuse;

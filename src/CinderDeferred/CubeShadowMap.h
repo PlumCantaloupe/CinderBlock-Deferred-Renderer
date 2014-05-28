@@ -7,10 +7,9 @@
  *
  */
 
-#ifndef gl_Plum_CubeShadowMap_h
-#define gl_Plum_CubeShadowMap_h
+#pragma once
 
-namespace gl_Plum {
+namespace DeferredMaps {
     
     class CubeShadowMap
     {
@@ -74,5 +73,3 @@ namespace gl_Plum {
     };
     
 };
-
-#endif

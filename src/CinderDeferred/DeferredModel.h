@@ -28,7 +28,7 @@ class DeferredModel
     DeferredMaterial material; //can use textures to replace these properties
     
     protected:
-    gl::VboMesh *mVBOMeshRef;   //keeping as pointer so VBO's can be shared if many similar instances
+    gl::VboMesh mVBOMeshRef;   //keeping as pointer so VBO's can be shared if many similar instances
     Matrix44f   mModelMatrix;   //in trying to be forward thinking we will think in terms of matrices not pos, scale, rotation. Use glMultMatrixf( mModelMatrix ) if you must use immediate mode
     
     //these textures are optional but if set will overwrite any corresponding material options
@@ -40,7 +40,10 @@ class DeferredModel
     gl::Texture *normalTex;
     
     public:
-    void setup( gl::VboMesh *VBOMeshRef, const DeferredMaterial mat, const Matrix44f modelMatrix = Matrix44f::identity() )
+    DeferredModel()
+    {}
+    
+    void setup( gl::VboMesh VBOMeshRef, const DeferredMaterial mat, const Matrix44f modelMatrix = Matrix44f::identity() )
     {
         mVBOMeshRef = VBOMeshRef;
         material = mat;
@@ -116,6 +119,11 @@ class DeferredModel
         normalTex = tex;
     }
     
+    void render()
+    {
+        gl::draw( mVBOMeshRef );
+    }
+    
     /*
      uniform vec3 diffuse;
      uniform vec3 specular;
@@ -126,11 +134,12 @@ class DeferredModel
     
 #pragma mark - static VBO primitive functions
     
-    static void getPlaneVboMesh( gl::VboMesh *vboMesh, const Vec3f &c, const float size )
+    static gl::VboMesh getPlaneVboMesh( const Vec3f &c, const float size )
     {
         vector<uint32_t> indices;
         vector<Vec3f> normals;
         vector<Vec3f> positions;
+        vector<Vec2f> texCoords;
         
         positions.push_back( c + Vec3f(-size/2, 0, -size/2) );  //left top
         positions.push_back( c + Vec3f(-size/2, 0, size/2) );   //left bottom
@@ -149,22 +158,32 @@ class DeferredModel
         indices.push_back( 1 );
         indices.push_back( 3 );
         
+        texCoords.push_back( Vec2f(0,0) );
+        texCoords.push_back( Vec2f(0,1) );
+        texCoords.push_back( Vec2f(1,0) );
+        texCoords.push_back( Vec2f(1,1) );
+        
         gl::VboMesh::Layout layout;
         layout.setStaticPositions();
         layout.setStaticIndices();
         layout.setStaticNormals();
+        layout.setStaticTexCoords2d();
         
-        *vboMesh = gl::VboMesh( positions.size(), indices.size(), layout, GL_TRIANGLES );
-        vboMesh->bufferPositions( positions );
-        vboMesh->bufferNormals( normals );
-        vboMesh->bufferIndices( indices );
+        gl::VboMesh vboMesh = gl::VboMesh( positions.size(), indices.size(), layout, GL_TRIANGLES );
+        vboMesh.bufferPositions( positions );
+        vboMesh.bufferNormals( normals );
+        vboMesh.bufferIndices( indices );
+        vboMesh.bufferTexCoords2d( 0, texCoords );
         
         indices.clear();
         normals.clear();
         positions.clear();
+        texCoords.clear();
+        
+        return vboMesh;
     }
     
-    static void getCubeVboMesh( gl::VboMesh *vboMesh, const Vec3f &c, const Vec3f &size )
+    static gl::VboMesh getCubeVboMesh( const Vec3f &c, const Vec3f &size )
     {
         float sx = size.x * 0.5f;
         float sy = size.y * 0.5f;
@@ -179,19 +198,19 @@ class DeferredModel
         };
         
         Vec3f normals[24]={ Vec3f(1,0,0),   Vec3f(1,0,0),   Vec3f(1,0,0),   Vec3f(1,0,0),
-            Vec3f(0,1,0),	Vec3f(0,1,0),	Vec3f(0,1,0),	Vec3f(0,1,0),
-            Vec3f(0,0,1),	Vec3f(0,0,1),	Vec3f(0,0,1),	Vec3f(0,0,1),
-            Vec3f(-1,0,0),	Vec3f(-1,0,0),	Vec3f(-1,0,0),	Vec3f(-1,0,0),
-            Vec3f(0,-1,0),	Vec3f(0,-1,0),  Vec3f(0,-1,0),  Vec3f(0,-1,0),
-            Vec3f(0,0,-1),	Vec3f(0,0,-1),	Vec3f(0,0,-1),	Vec3f(0,0,-1)
+                            Vec3f(0,1,0),	Vec3f(0,1,0),	Vec3f(0,1,0),	Vec3f(0,1,0),
+                            Vec3f(0,0,1),	Vec3f(0,0,1),	Vec3f(0,0,1),	Vec3f(0,0,1),
+                            Vec3f(-1,0,0),	Vec3f(-1,0,0),	Vec3f(-1,0,0),	Vec3f(-1,0,0),
+                            Vec3f(0,-1,0),	Vec3f(0,-1,0),  Vec3f(0,-1,0),  Vec3f(0,-1,0),
+                            Vec3f(0,0,-1),	Vec3f(0,0,-1),	Vec3f(0,0,-1),	Vec3f(0,0,-1)
         };
         
         uint32_t indices[6*6] = {   0, 1, 2, 0, 2, 3,
-            4, 5, 6, 4, 6, 7,
-            8, 9,10, 8, 10,11,
-            12,13,14,12,14,15,
-            16,17,18,16,18,19,
-            20,21,22,20,22,23
+                                    4, 5, 6, 4, 6, 7,
+                                    8, 9,10, 8, 10,11,
+                                    12,13,14,12,14,15,
+                                    16,17,18,16,18,19,
+                                    20,21,22,20,22,23
         };
         
         gl::VboMesh::Layout layout;
@@ -199,18 +218,21 @@ class DeferredModel
         layout.setStaticIndices();
         layout.setStaticNormals();
         
-        *vboMesh = gl::VboMesh( 24, 36, layout, GL_TRIANGLES );
-        vboMesh->bufferPositions(std::vector<Vec3f>(vertices, vertices + sizeof(vertices)/sizeof(vertices[0])));
-        vboMesh->bufferNormals(std::vector<Vec3f>(normals, normals + sizeof(normals)/sizeof(normals[0])));
-        vboMesh->bufferIndices(std::vector<uint32_t>(indices, indices + sizeof(indices)/sizeof(indices[0])));
+        gl::VboMesh vboMesh = gl::VboMesh( 24, 36, layout, GL_TRIANGLES );
+        vboMesh.bufferPositions(std::vector<Vec3f>(vertices, vertices + sizeof(vertices)/sizeof(vertices[0])));
+        vboMesh.bufferNormals(std::vector<Vec3f>(normals, normals + sizeof(normals)/sizeof(normals[0])));
+        vboMesh.bufferIndices(std::vector<uint32_t>(indices, indices + sizeof(indices)/sizeof(indices[0])));
+        
+        return vboMesh;
     }
     
     //modfied from Stephen Schieberl's MeshHelper class https://github.com/bantherewind/Cinder-MeshHelper
-    static void getSphereVboMesh( gl::VboMesh *vboMesh, const Vec3f &center, const float radius, const Vec2i resolution )
+    static gl::VboMesh getSphereVboMesh( const Vec3f &center, const float radius, const Vec2i resolution )
     {
         vector<uint32_t> indices;
         vector<Vec3f> normals;
         vector<Vec3f> positions;
+        vector<Vec2f> texCoords;
         
         float step = (float)M_PI / (float)resolution.y;
         float delta = ((float)M_PI * 2.0f) / (float)resolution.x;
@@ -229,10 +251,12 @@ class DeferredModel
                 float z = -math<float>::cos( phi );
                 Vec3f position( x, y, z );
                 position = (position * radius) + center;
-                Vec3f normal = position.normalized();
+                Vec3f normal = (position - center).normalized();
+                Vec2f texCoord = ( normal.xy() + Vec2f::one() ) * 0.5f;
                 
                 normals.push_back( normal );
                 positions.push_back( position );
+                texCoords.push_back( texCoord );
                 
                 uint32_t n = (uint32_t)( t + 1 >= resolution.x ? 0 : t + 1 );
                 indices.push_back( a + t );
@@ -256,19 +280,24 @@ class DeferredModel
         layout.setStaticPositions();
         layout.setStaticIndices();
         layout.setStaticNormals();
+        layout.setStaticTexCoords2d();
         
-        *vboMesh = gl::VboMesh( positions.size(), indices.size(), layout, GL_TRIANGLES );
-        vboMesh->bufferPositions( positions );
-        vboMesh->bufferNormals( normals );
-        vboMesh->bufferIndices( indices );
+        gl::VboMesh vboMesh = gl::VboMesh( positions.size(), indices.size(), layout, GL_TRIANGLES );
+        vboMesh.bufferPositions( positions );
+        vboMesh.bufferNormals( normals );
+        vboMesh.bufferIndices( indices );
+        vboMesh.bufferTexCoords2d( 0, texCoords );
         
         indices.clear();
         normals.clear();
         positions.clear();
+        texCoords.clear();
+        
+        return vboMesh;
     }
     
     //ogre3D implementation
-    static void getConeVboMesh( gl::VboMesh *vboMesh, const Vec3f &pointPos, const float &coneHeight, const float &coneRadius, const int numSegments )
+    static gl::VboMesh getConeVboMesh( const Vec3f &pointPos, const float &coneHeight, const float &coneRadius, const int numSegments )
     {
         vector<uint32_t> indices;
         vector<Vec3f> normals;
@@ -310,13 +339,15 @@ class DeferredModel
         layout.setStaticIndices();
         layout.setStaticNormals();
         
-        *vboMesh = gl::VboMesh( positions.size(), indices.size(), layout, GL_TRIANGLES );
-        vboMesh->bufferPositions( positions );
-        vboMesh->bufferNormals( normals );
-        vboMesh->bufferIndices( indices );
+        gl::VboMesh vboMesh = gl::VboMesh( positions.size(), indices.size(), layout, GL_TRIANGLES );
+        vboMesh.bufferPositions( positions );
+        vboMesh.bufferNormals( normals );
+        vboMesh.bufferIndices( indices );
         
         indices.clear();
         normals.clear();
         positions.clear();
+        
+        return vboMesh;
     }
 };

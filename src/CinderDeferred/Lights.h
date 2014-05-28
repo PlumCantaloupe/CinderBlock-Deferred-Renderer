@@ -27,7 +27,7 @@ class Light_Point
     
 public:
     CameraPersp                 mShadowCam;
-    gl_Plum::CubeShadowMap      mShadowMap;
+    DeferredMaps::CubeShadowMap mShadowMap;
     gl::Fbo                     mDepthFBO;
     gl::Fbo                     mShadowsFbo;
     
@@ -47,7 +47,7 @@ private:
     gl::VboMesh                 *mVBOMeshRef;
     
 public:
-	Light_Point(gl::VboMesh *vboMeshRef, Vec3f pos, Color col, float intensity, int shadowMapRes, BOOL castsShadows = false, BOOL proxyVisible = false)
+	Light_Point(gl::VboMesh* vboMeshRef, Vec3f pos, Color col, float intensity, int shadowMapRes, BOOL castsShadows = false, BOOL proxyVisible = false)
     {
         mVBOMeshRef = vboMeshRef;
         mCol = col;

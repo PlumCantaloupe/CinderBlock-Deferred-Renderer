@@ -107,12 +107,17 @@ public:
         NUM_RENDER_VIEWS
     };
     
-private:
-    BOOL    mUseSSAO;
-    BOOL    mUseShadows;
-    BOOL    mUseFXAA;
+protected:
+    int mDeferFlags;
     
 public:
+    //using bit-shifting so multiple flags can be set simultaneously
+    enum {
+        SHADOWS_ENABLED_FLAG    = (1 << 0),
+        SSAO_ENABLED_FLAG       = (1 << 1),
+        FXAA_ENABLED_FLAG       = (1 << 2)
+    };
+    
     enum {
         SHADER_TYPE_NONE,
         SHADER_TYPE_DEFERRED,
@@ -133,9 +138,7 @@ public:
                Camera    *cam,
                Vec2i     FBORes = Vec2i(512, 512),
                int       shadowMapRes = 512,
-               BOOL      useSSAO = true,
-               BOOL      useShadows = true,
-               BOOL      useFXAA = true);
+               int       deferFlags = SHADOWS_ENABLED_FLAG | SSAO_ENABLED_FLAG | FXAA_ENABLED_FLAG );
     
     Light_Point* addPointLight(const Vec3f position, const Color color, const float intensity, const bool castsShadows = false, const bool visible = false);
     Light_Spot* addSpotLight(const Vec3f position, const Vec3f target, const Color color, const bool castsShadows = false, const bool visible = true);
