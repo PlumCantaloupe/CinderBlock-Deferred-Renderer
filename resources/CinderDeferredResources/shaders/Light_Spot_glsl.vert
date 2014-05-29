@@ -1,21 +1,15 @@
 #version 120
 
-//varying vec4 sPos;
-//
-//void main(void)
-//{
-//	gl_Position = ftransform();
-//    sPos = gl_Position;
-//}
-
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
+uniform mat4 modelview_mat;
+uniform mat4 projection_mat;
 
 void main()
 {
     vec4 position = gl_Vertex;                  //in
     
     //sphere proxy needs real position
-    vec4 mvPosition = modelViewMatrix * vec4( position.xyz, 1.0 );
-    gl_Position = projectionMatrix * mvPosition;
+    vec4 mvPosition = modelview_mat * vec4( position.xyz, 1.0 );
+    gl_Position = projection_mat * mvPosition;
+    
+    //gl_Position = vec4( sign( position.xy ), 0.0, 1.0 );
 }

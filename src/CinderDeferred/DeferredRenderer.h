@@ -79,6 +79,7 @@ public:
     gl::GlslProg		mHBlurShader;
     gl::GlslProg		mVBlurShader;
     gl::GlslProg		mLightPointShader;
+    gl::GlslProg		mLightSpotShader;
     gl::GlslProg		mAlphaToRBG;
 	gl::GlslProg		mFXAAShader;
     gl::GlslProg		mDepthWriteShader;
