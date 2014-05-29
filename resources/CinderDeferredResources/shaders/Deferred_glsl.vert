@@ -30,7 +30,7 @@ varying vec3 normalView;                        //out
 varying vec4 clipPos;                           //out
 
 void main() {
-    vec2 uv = gl_MultiTexCoord0.st;             //in
+    //vec2 uv = gl_MultiTexCoord0.st;             //in
     vec4 position = gl_Vertex;                  //in
     vec3 normal = gl_Normal;                    //in
     vec4 color = gl_Color;                      //in

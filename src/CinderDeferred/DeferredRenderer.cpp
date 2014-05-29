@@ -120,11 +120,11 @@ void DeferredRenderer::prepareDeferredScene()
 void DeferredRenderer::createShadowMaps()
 {
     //render depth map cube
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_FRONT);
+//    glEnable(GL_CULL_FACE);
+//    glCullFace(GL_FRONT);
     for(vector<Light_Point*>::iterator currPointLight = mPointLights.begin(); currPointLight != mPointLights.end(); ++currPointLight)
     {
-        if (!(*currPointLight)->doesCastShadows()) {
+        if ( !(*currPointLight)->doesCastShadows() ) {
             continue;
         }
         
@@ -135,26 +135,40 @@ void DeferredRenderer::createShadowMaps()
         glReadBuffer(GL_NONE);
         glViewport(0, 0, mShadowMapRes, mShadowMapRes);
         
-        glMatrixMode(GL_PROJECTION);
-        glLoadMatrixf((*currPointLight)->mShadowCam.getProjectionMatrix());
-        glMatrixMode(GL_MODELVIEW);
+//        glMatrixMode(GL_PROJECTION);
+//        glLoadMatrixf((*currPointLight)->mShadowCam.getProjectionMatrix());
+//        glMatrixMode(GL_MODELVIEW);
+//        
+//        for (size_t i = 0; i < 6; ++i) {
+//            (*currPointLight)->mShadowMap.bindDepthFB( i );
+//            glClear(GL_DEPTH_BUFFER_BIT);
+//            
+//            glLoadMatrixf(mLightFaceViewMatrices[i]);
+//            glMultMatrixf((*currPointLight)->mShadowCam.getModelViewMatrix());
+//            
+//            if (fRenderShadowCastersFunc) {
+//                fRenderShadowCastersFunc( SHADER_TYPE_NONE, NULL );
+//            }
+//        }
         
+        mDepthWriteShader.bind();
+        mDepthWriteShader.uniform("projection_mat", (*currPointLight)->mShadowCam.getProjectionMatrix());
         for (size_t i = 0; i < 6; ++i) {
             (*currPointLight)->mShadowMap.bindDepthFB( i );
             glClear(GL_DEPTH_BUFFER_BIT);
             
-            glLoadMatrixf(mLightFaceViewMatrices[i]);
-            glMultMatrixf((*currPointLight)->mShadowCam.getModelViewMatrix());
+            mDepthWriteShader.uniform("modelview_mat", mLightFaceViewMatrices[i] * (*currPointLight)->mShadowCam.getModelViewMatrix());
             
             if (fRenderShadowCastersFunc) {
-                fRenderShadowCastersFunc( SHADER_TYPE_NONE, NULL );
+                fRenderShadowCastersFunc( SHADER_TYPE_DEPTH, &mDepthWriteShader );
             }
         }
+        mDepthWriteShader.unbind();
         
         (*currPointLight)->mDepthFBO.unbindFramebuffer();
     }
     
-    //render point light
+    //render spot light
     for(vector<Light_Spot*>::iterator currSpotLight = mSpotLights.begin(); currSpotLight != mSpotLights.end(); ++currSpotLight)
     {
         if (!(*currSpotLight)->doesCastShadows()) {
@@ -176,7 +190,8 @@ void DeferredRenderer::createShadowMaps()
         
         (*currSpotLight)->mDepthFBO.unbindFramebuffer();
     }
-    glDisable(GL_CULL_FACE);
+    
+//    glDisable(GL_CULL_FACE);
 }
 
 void DeferredRenderer::renderShadowsToFBOs()
@@ -198,11 +213,13 @@ void DeferredRenderer::renderShadowsToFBOs()
         mPointShadowShader.bind();
         (*currPointLight)->mShadowMap.bind(0); //the magic texture
         mPointShadowShader.uniform( "shadow", 0);
-        mPointShadowShader.uniform( "light_position", mCam->getModelViewMatrix().transformPointAffine( (*currPointLight)->mShadowCam.getEyePoint() )); //conversion from world-space to camera-space (required here)
-        mPointShadowShader.uniform( "camera_view_matrix_inv", mCam->getInverseModelViewMatrix());
-        mPointShadowShader.uniform( "light_view_matrix", (*currPointLight)->mShadowCam.getModelViewMatrix());
-        mPointShadowShader.uniform( "light_projection_matrix", (*currPointLight)->mShadowCam.getProjectionMatrix());
-        drawScene();
+        //mPointShadowShader.uniform( "modelview_mat", mCam->getModelViewMatrix() );
+        mPointShadowShader.uniform( "projection_mat", mCam->getProjectionMatrix() );
+        mPointShadowShader.uniform( "light_pos", mCam->getModelViewMatrix().transformPointAffine( (*currPointLight)->mShadowCam.getEyePoint() )); //conversion from world-space to camera-space (required here)
+        mPointShadowShader.uniform( "camera_modelview_mat_inv", mCam->getInverseModelViewMatrix()); //!! need to account for model_mat ...
+        mPointShadowShader.uniform( "light_modelview_mat", (*currPointLight)->mShadowCam.getModelViewMatrix());
+        mPointShadowShader.uniform( "light_projection_mat", (*currPointLight)->mShadowCam.getProjectionMatrix());
+        drawScene( SHADER_TYPE_SHADOW, &mPointShadowShader );
         (*currPointLight)->mShadowMap.unbind();
         mPointShadowShader.unbind();
         
@@ -210,32 +227,32 @@ void DeferredRenderer::renderShadowsToFBOs()
     }
     glDisable(GL_TEXTURE_CUBE_MAP);
     
-    for(vector<Light_Spot*>::iterator currSpotLight = mSpotLights.begin(); currSpotLight != mSpotLights.end(); ++currSpotLight) {
-        if (!(*currSpotLight)->doesCastShadows()) {
-            continue;
-        }
-        
-        (*currSpotLight)->mShadowsFbo.bindFramebuffer();
-        glClearColor( 0.5f, 0.5f, 0.5f, 0.0f );
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        gl::setViewport( (*currSpotLight)->mShadowsFbo.getBounds() );
-        glCullFace(GL_BACK); //don't need what we won't see
-        gl::setMatrices( *mCam );
-        
-        //get shadow matrix transform
-        Matrix44f shadowTransMatrix = (*currSpotLight)->mShadowCam.getProjectionMatrix();
-        shadowTransMatrix *= (*currSpotLight)->mShadowCam.getModelViewMatrix();
-        shadowTransMatrix *= mCam->getInverseModelViewMatrix();
-
-        (*currSpotLight)->mDepthFBO.bindDepthTexture(0);
-        mSpotShadowShader.bind();
-        mSpotShadowShader.uniform( "depthTexture", 0 );
-        mSpotShadowShader.uniform( "shadowTransMatrix", shadowTransMatrix );
-        drawScene();
-        mSpotShadowShader.unbind();
-        (*currSpotLight)->mDepthFBO.unbindTexture();
-        (*currSpotLight)->mShadowsFbo.unbindFramebuffer();
-    }
+//    for(vector<Light_Spot*>::iterator currSpotLight = mSpotLights.begin(); currSpotLight != mSpotLights.end(); ++currSpotLight) {
+//        if (!(*currSpotLight)->doesCastShadows()) {
+//            continue;
+//        }
+//        
+//        (*currSpotLight)->mShadowsFbo.bindFramebuffer();
+//        glClearColor( 0.5f, 0.5f, 0.5f, 0.0f );
+//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+//        gl::setViewport( (*currSpotLight)->mShadowsFbo.getBounds() );
+//        glCullFace(GL_BACK); //don't need what we won't see
+//        gl::setMatrices( *mCam );
+//        
+//        //get shadow matrix transform
+//        Matrix44f shadowTransMatrix = (*currSpotLight)->mShadowCam.getProjectionMatrix();
+//        shadowTransMatrix *= (*currSpotLight)->mShadowCam.getModelViewMatrix();
+//        shadowTransMatrix *= mCam->getInverseModelViewMatrix();
+//
+//        (*currSpotLight)->mDepthFBO.bindDepthTexture(0);
+//        mSpotShadowShader.bind();
+//        mSpotShadowShader.uniform( "depthTexture", 0 );
+//        mSpotShadowShader.uniform( "shadowTransMatrix", shadowTransMatrix );
+//        drawScene();
+//        mSpotShadowShader.unbind();
+//        (*currSpotLight)->mDepthFBO.unbindTexture();
+//        (*currSpotLight)->mShadowsFbo.unbindFramebuffer();
+//    }
     glDisable(GL_CULL_FACE);
     
     //render all shadow layers to one FBO
@@ -548,23 +565,6 @@ void DeferredRenderer::renderQuad( const int renderType, Rectf renderQuad, const
             mDeferredFBO.getTexture(1).unbind(0);
         }
             break;
-        case SHOW_POSITION_VIEW: {
-            gl::setViewport( getWindowBounds() );
-            gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
-            mDeferredFBO.getTexture(2).bind(0);
-            gl::drawSolidRect( renderQuad );
-            mDeferredFBO.getTexture(2).unbind(0);
-        }
-            break;
-        case SHOW_ATTRIBUTE_VIEW: {
-            gl::setViewport( getWindowBounds() );
-            gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
-            mDeferredFBO.getTexture(3).bind(0);
-            gl::drawSolidRect( renderQuad );
-            mDeferredFBO.getTexture(3).unbind(0);
-        }
-            break;
-            
         case SHOW_NORMALMAP_VIEW: {
             gl::setViewport( getWindowBounds() );
             gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
@@ -645,6 +645,11 @@ void DeferredRenderer::drawLightMeshes( int shaderType, gl::GlslProg* shader )
                     (*currPointLight)->renderProxyAOE(); //render the proxy shape
                 }
                     break;
+                case SHADER_TYPE_SHADOW: {
+//                    shader->uniform("modelMatrix", (*currPointLight)->modelMatrix );
+//                    (*currPointLight)->renderProxy();
+                    break;
+                }
                 default:
                     console() << "warning: no shader type selected \n";
                     break;
@@ -653,17 +658,17 @@ void DeferredRenderer::drawLightMeshes( int shaderType, gl::GlslProg* shader )
     }
 }
 
-void DeferredRenderer::drawScene()
+void DeferredRenderer::drawScene( int shaderType, gl::GlslProg *shader )
 {
     if(fRenderShadowCastersFunc) {
-        fRenderShadowCastersFunc(SHADER_TYPE_NONE, NULL);
+        fRenderShadowCastersFunc( shaderType, shader );
     }
     
     if(fRenderNotShadowCastersFunc) {
-        fRenderNotShadowCastersFunc(SHADER_TYPE_NONE, NULL);
+        fRenderNotShadowCastersFunc( shaderType, shader);
     }
     
-    drawLightMeshes( SHADER_TYPE_LIGHT, NULL ); //!!need to relook at this for shadow-mapping as I need to pass matrices
+    drawLightMeshes( shaderType, shader ); //!!need to relook at this for shadow-mapping as I need to pass matrices
 }
 
 void DeferredRenderer::renderLights()
@@ -719,6 +724,7 @@ void DeferredRenderer::initShaders()
     if ( mDeferFlags & SHADOWS_ENABLED_FLAG ) {
         mPointShadowShader   = gl::GlslProg( loadResource( RES_GLSL_POINTSHADOW_VERT ), loadResource( RES_GLSL_POINTSHADOW_FRAG ) );
         mSpotShadowShader   = gl::GlslProg( loadResource( RES_GLSL_SPOTSHADOW_VERT ), loadResource( RES_GLSL_SPOTSHADOW_FRAG ) );
+        mDepthWriteShader   = gl::GlslProg( loadResource( RES_GLSL_DEPTHWRITE_VERT ), loadResource( RES_GLSL_DEPTHWRITE_FRAG ) );
     }
     
     if ( mDeferFlags & FXAA_ENABLED_FLAG ) {

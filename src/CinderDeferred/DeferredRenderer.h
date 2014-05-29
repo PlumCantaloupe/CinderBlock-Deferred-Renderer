@@ -81,6 +81,7 @@ public:
     gl::GlslProg		mLightPointShader;
     gl::GlslProg		mAlphaToRBG;
 	gl::GlslProg		mFXAAShader;
+    gl::GlslProg		mDepthWriteShader;
     
     vector<Light_Point*>    mPointLights;
     vector<Light_Spot*>     mSpotLights;
@@ -98,8 +99,6 @@ public:
         SHOW_DIFFUSE_VIEW,
         SHOW_NORMALMAP_VIEW,
         SHOW_DEPTH_VIEW,
-        SHOW_POSITION_VIEW,
-        SHOW_ATTRIBUTE_VIEW,
         SHOW_SSAO_VIEW,
         SHOW_SSAO_BLURRED_VIEW,
         SHOW_LIGHT_VIEW,
@@ -123,6 +122,7 @@ public:
         SHADER_TYPE_DEFERRED,
         SHADER_TYPE_LIGHT,
         SHADER_TYPE_SHADOW,
+        SHADER_TYPE_DEPTH,
         NUM_SHADER_TYPES
     };
     
@@ -152,7 +152,7 @@ public:
     void renderFullScreenQuad( const int renderType, const BOOL autoPrepareScene = true  );
     void renderQuad( const int renderType, Rectf renderQuad, const BOOL autoPrepareScene = true  );
     void drawLightMeshes(  int shaderType = SHADER_TYPE_NONE, gl::GlslProg* shader = NULL );
-    void drawScene();
+    void drawScene( int shaderType, gl::GlslProg *shader );
     void renderLights();
     void initTextures();
     void initShaders();
