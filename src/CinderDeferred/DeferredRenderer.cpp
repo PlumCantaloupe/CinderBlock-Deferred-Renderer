@@ -87,9 +87,9 @@ Light_Point* DeferredRenderer::addPointLight(const Vec3f position, const Color c
     return newLightP;
 }
 
-Light_Spot* DeferredRenderer::addSpotLight(const Vec3f position, const Vec3f target, const Color color, const bool castsShadows, const bool visible)
+Light_Spot* DeferredRenderer::addSpotLight(const Vec3f position, const Vec3f target, const Color color, const float intensity, const float lightAngle, const bool castsShadows, const bool visible)
 {
-    Light_Spot *newLightP = new Light_Spot( &mConeVBOMesh, position, target, color, mShadowMapRes, (castsShadows && (mDeferFlags & SHADOWS_ENABLED_FLAG)), visible );
+    Light_Spot *newLightP = new Light_Spot( &mConeVBOMesh, position, target, color, intensity, lightAngle, mShadowMapRes, (castsShadows && (mDeferFlags & SHADOWS_ENABLED_FLAG)), visible );
     mSpotLights.push_back( newLightP );
     return newLightP;
 }
@@ -305,7 +305,8 @@ void DeferredRenderer::renderDeferredFBO()
     normalMatrix.transpose();
     mDeferredShader.uniform("normalMatrix", normalMatrix ); //getInverse( object modelMatrix ).transpose()
     
-    drawLightMeshes( SHADER_TYPE_DEFERRED, &mDeferredShader );
+    drawLightPointMeshes( SHADER_TYPE_DEFERRED, &mDeferredShader );
+    drawLightSpotMeshes( SHADER_TYPE_DEFERRED, &mDeferredShader );
     
     mDeferredShader.uniform("modelViewMatrix", mCam->getModelViewMatrix());
     
@@ -355,7 +356,7 @@ void DeferredRenderer::renderLightsToFBO()
     glClearColor( 0.0f, 0.0f, 0.0f, 1.0 );
     glClearDepth(1.0f);
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-    //draw glowing cubes
+    //draw light effects
     renderLights();
     mLightGlowFBO.unbindFramebuffer();
 }
@@ -617,30 +618,63 @@ void DeferredRenderer::renderQuad( const int renderType, Rectf renderQuad, const
     }
 }
 
-void DeferredRenderer::drawLightMeshes( int shaderType, gl::GlslProg* shader )
+void DeferredRenderer::drawLightPointMeshes( int shaderType, gl::GlslProg* shader )
 {
     //point lights
-    for(vector<Light_Point*>::iterator currPointLight = mPointLights.begin(); currPointLight != mPointLights.end(); ++currPointLight) {
+    for(vector<Light_Point*>::iterator currLight = mPointLights.begin(); currLight != mPointLights.end(); ++currLight) {
         if ( shader ) {
             switch (shaderType) {
                 case SHADER_TYPE_DEFERRED: {
-                    shader->uniform("modelViewMatrix", mCam->getModelViewMatrix() * (*currPointLight)->modelMatrix);
-                    (*currPointLight)->renderProxy(); //render the proxy shape
+                    shader->uniform("modelViewMatrix", mCam->getModelViewMatrix() * (*currLight)->modelMatrix);
+                    (*currLight)->renderProxy(); //render the proxy shape
                 }
                     break;
                 case SHADER_TYPE_LIGHT: {
-                    shader->uniform("lightColor", (*currPointLight)->getColor());
-                    shader->uniform("lightRadius", (*currPointLight)->getLightMaskRadius());
-                    shader->uniform("lightIntensity", (*currPointLight)->getIntensity());
-                    shader->uniform("lightPositionVS", mCam->getModelViewMatrix().transformPointAffine( (*currPointLight)->getPos() ));
-                    shader->uniform("modelViewMatrix", mCam->getModelViewMatrix() * (*currPointLight)->modelMatrixAOE );
-                    
-                    (*currPointLight)->renderProxyAOE(); //render the proxy shape
+                    shader->uniform("light_col", (*currLight)->getColor());
+                    shader->uniform("light_radius", (*currLight)->getLightMaskRadius());
+                    shader->uniform("light_intensity", (*currLight)->getIntensity());
+                    shader->uniform("light_pos_vs", mCam->getModelViewMatrix().transformPointAffine( (*currLight)->getPos() ));
+                    shader->uniform("modelview_mat", mCam->getModelViewMatrix() * (*currLight)->modelMatrixAOE );
+                    (*currLight)->renderProxyAOE(); //render the proxy shape
                 }
                     break;
                 case SHADER_TYPE_SHADOW: {
 //                    shader->uniform("modelMatrix", (*currPointLight)->modelMatrix );
 //                    (*currPointLight)->renderProxy();
+                    break;
+                }
+                default:
+                    console() << "warning: no shader type selected \n";
+                    break;
+            }
+        }
+    }
+}
+
+void DeferredRenderer::drawLightSpotMeshes( int shaderType, gl::GlslProg* shader )
+{
+    //point lights
+    for(vector<Light_Spot*>::iterator currLight = mSpotLights.begin(); currLight != mSpotLights.end(); ++currLight) {
+        if ( shader ) {
+            switch (shaderType) {
+                case SHADER_TYPE_DEFERRED: {
+                    shader->uniform("modelViewMatrix", mCam->getModelViewMatrix() * (*currLight)->modelMatrix);
+                    (*currLight)->renderProxy(); //render the proxy shape
+                }
+                    break;
+                case SHADER_TYPE_LIGHT: {
+                    shader->uniform("light_angle", ((float)M_PI * 0.25f));// (*currLight)->getLightAngle());
+                    shader->uniform("light_col", (*currLight)->getColor());
+                    shader->uniform("light_intensity", 1.0f); //(*currLight)->getIntensity());
+                    shader->uniform("light_pos_vs", mCam->getModelViewMatrix().transformPoint( (*currLight)->getPos() ));
+                    shader->uniform("light_dir_vs", mCam->getModelViewMatrix().transformVec( (*currLight)->getLightDirection() ) );
+                    shader->uniform("modelview_mat", mCam->getModelViewMatrix() * (*currLight)->modelMatrixAOE );
+                    (*currLight)->renderProxyAOE(); //render the proxy shape
+                }
+                    break;
+                case SHADER_TYPE_SHADOW: {
+                    //                    shader->uniform("modelMatrix", (*currPointLight)->modelMatrix );
+                    //                    (*currPointLight)->renderProxy();
                     break;
                 }
                 default:
@@ -661,7 +695,9 @@ void DeferredRenderer::drawScene( int shaderType, gl::GlslProg *shader )
         fRenderNotShadowCastersFunc( shaderType, shader);
     }
     
-    drawLightMeshes( shaderType, shader ); //!!need to relook at this for shadow-mapping as I need to pass matrices
+    drawLightPointMeshes( shaderType, shader ); //!!need to relook at this for shadow-mapping as I need to pass matrices
+    drawLightSpotMeshes( shaderType, shader ); //!!need to relook at this for shadow-mapping as I need to pass matrices
+
 }
 
 void DeferredRenderer::renderLights()
@@ -673,19 +709,31 @@ void DeferredRenderer::renderLights()
     glDisable(GL_DEPTH_TEST); //disable depth testing
     glDepthMask(false);
     
-    mLightPointShader.bind(); //bind point light pixel shader
+    //point lights
     mDeferredFBO.getTexture(0).bind(0); //bind color tex
     mDeferredFBO.getTexture(1).bind(1); //bind normal/depth tex
-    mLightPointShader.uniform("projectionMatrix", mCam->getProjectionMatrix());
-    mLightPointShader.uniform("samplerColor", 0);
-    mLightPointShader.uniform("samplerNormalDepth", 1);
-    mLightPointShader.uniform("matProjInverse", mCam->getProjectionMatrix().inverted());
-    mLightPointShader.uniform("viewHeight", mDeferredFBO.getHeight());
-    mLightPointShader.uniform("viewWidth", mDeferredFBO.getWidth());
     
-    drawLightMeshes( SHADER_TYPE_LIGHT, &mLightPointShader );
-    
+    mLightPointShader.bind(); //bind point light pixel shader
+    mLightPointShader.uniform("projection_mat", mCam->getProjectionMatrix());
+    mLightPointShader.uniform("sampler_col", 0);
+    mLightPointShader.uniform("sampler_normal_depth", 1);
+    mLightPointShader.uniform("proj_inv_mat", mCam->getProjectionMatrix().inverted());
+    mLightPointShader.uniform("view_height", mDeferredFBO.getHeight());
+    mLightPointShader.uniform("view_width", mDeferredFBO.getWidth());
+    drawLightPointMeshes( SHADER_TYPE_LIGHT, &mLightPointShader );
     mLightPointShader.unbind(); //unbind and reset everything to desired values
+    
+    //spot lights
+    mLightSpotShader.bind(); //bind point light pixel shader
+    mLightSpotShader.uniform("projection_mat", mCam->getProjectionMatrix());
+    mLightSpotShader.uniform("sampler_col", 0);
+    mLightSpotShader.uniform("sampler_normal_depth", 1);
+    mLightSpotShader.uniform("proj_inv_mat", mCam->getProjectionMatrix().inverted());
+    mLightSpotShader.uniform("view_height", mDeferredFBO.getHeight());
+    mLightSpotShader.uniform("view_width", mDeferredFBO.getWidth());
+    drawLightSpotMeshes( SHADER_TYPE_LIGHT, &mLightSpotShader );
+    mLightSpotShader.unbind(); //unbind and reset everything to desired values
+    
     mDeferredFBO.getTexture(0).unbind(0); //bind color tex
     mDeferredFBO.getTexture(1).unbind(1); //bind normal/depth tex
     

@@ -142,7 +142,7 @@ public:
                int       deferFlags = SHADOWS_ENABLED_FLAG | SSAO_ENABLED_FLAG | FXAA_ENABLED_FLAG );
     
     Light_Point* addPointLight(const Vec3f position, const Color color, const float intensity, const bool castsShadows = false, const bool visible = false);
-    Light_Spot* addSpotLight(const Vec3f position, const Vec3f target, const Color color, const bool castsShadows = false, const bool visible = true);
+    Light_Spot* addSpotLight(const Vec3f position, const Vec3f target, const Color color, const float intensity, const float lightAngle, const bool castsShadows, const bool visible);
     void prepareDeferredScene();
     void createShadowMaps();
     void renderShadowsToFBOs();
@@ -152,7 +152,8 @@ public:
     void pingPongBlurSSAO();
     void renderFullScreenQuad( const int renderType, const BOOL autoPrepareScene = true  );
     void renderQuad( const int renderType, Rectf renderQuad, const BOOL autoPrepareScene = true  );
-    void drawLightMeshes(  int shaderType = SHADER_TYPE_NONE, gl::GlslProg* shader = NULL );
+    void drawLightPointMeshes(  int shaderType = SHADER_TYPE_NONE, gl::GlslProg* shader = NULL );
+    void drawLightSpotMeshes(  int shaderType = SHADER_TYPE_NONE, gl::GlslProg* shader = NULL );
     void drawScene( int shaderType, gl::GlslProg *shader );
     void renderLights();
     void initTextures();

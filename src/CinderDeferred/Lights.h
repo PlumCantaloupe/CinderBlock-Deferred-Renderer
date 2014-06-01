@@ -160,47 +160,72 @@ public:
     }
 };
 
-//Light Cube Class
 class Light_Spot
 {
     
 public:
     CameraPersp                 mShadowCam;
+    DeferredMaps::CubeShadowMap mShadowMap;
     gl::Fbo                     mDepthFBO;
     gl::Fbo                     mShadowsFbo;
     
+    Matrix44f                   modelMatrix;
+    Matrix44f                   modelMatrixAOE;
+    //float                       modelMatrix[16];   //scale/translate matrix
+    //float                       modelMatrixAOE[16];    //scale/translate matrix
+    
 private:
-    Vec3f                       mPos;
-    Vec3f                       mTarget;
     Color                       mCol;
+    float                       mIntensity;
+    float                       mLightAngle;
+    float                       mMaskRadius;
     bool                        mCastShadows;
-    bool                        mVisible;
+    bool                        mProxyVisible;
     int                         mShadowMapRes;
+    Vec3f                       mTarget;
     
     gl::VboMesh                 *mVBOMeshRef;
     
 public:
-	Light_Spot(gl::VboMesh *vboMeshRef, Vec3f pos, Vec3f target, Color col, int shadowMapRes, bool castsShadows = false, bool visible = true)
+	Light_Spot(gl::VboMesh* vboMeshRef, Vec3f pos, Vec3f target, Color col, float intensity, float lightAngle, int shadowMapRes, BOOL castsShadows = false, BOOL proxyVisible = false)
     {
         mVBOMeshRef = vboMeshRef;
-        mPos = pos;
         mCol = col;
+        mIntensity = intensity;
+        mMaskRadius = intensity * 100.0f;
+        mTarget = target;
+        mLightAngle = lightAngle;
         mShadowMapRes = shadowMapRes;
         
         //set up fake "light" to grab matrix calculations from
         mShadowCam.setPerspective( 90.0f, 1.0f, 1.0f, 100.0f );
-        mShadowCam.lookAt( pos, target );
-        mShadowCam.setCenterOfInterestPoint( target );
+        mShadowCam.lookAt( pos, Vec3f( pos.x, 0.0f, pos.z ) );
         
         mCastShadows = castsShadows;
-        mVisible = visible;
+        mProxyVisible = proxyVisible;
         if (mCastShadows) {
             setUpShadowStuff();
         }
+        
+        //create matrices
+        float modelScale = 1.0f;
+        modelMatrix[0] = modelScale;        modelMatrix[4] = 0.0f;              modelMatrix[8] = 0.0f;              modelMatrix[12] = pos.x;
+        modelMatrix[1] = 0.0f;              modelMatrix[5] = modelScale;        modelMatrix[9] = 0.0f;              modelMatrix[13] = pos.y;
+        modelMatrix[2] = 0.0f;              modelMatrix[6] = 0.0f;              modelMatrix[10] = modelScale;       modelMatrix[14] = pos.z;
+        modelMatrix[3] = 0.0f;              modelMatrix[7] = 0.0f;              modelMatrix[11] = 0.0f;             modelMatrix[15] = 1.0f;
+        
+        modelMatrixAOE[0] = mMaskRadius;    modelMatrixAOE[4] = 0.0f;          modelMatrixAOE[8] = 0.0f;            modelMatrixAOE[12] = pos.x;
+        modelMatrixAOE[1] = 0.0f;           modelMatrixAOE[5] = mMaskRadius;   modelMatrixAOE[9] = 0.0f;            modelMatrixAOE[13] = pos.y;
+        modelMatrixAOE[2] = 0.0f;           modelMatrixAOE[6] = 0.0f;          modelMatrixAOE[10] = mMaskRadius;    modelMatrixAOE[14] = pos.z;
+        modelMatrixAOE[3] = 0.0f;           modelMatrixAOE[7] = 0.0f;          modelMatrixAOE[11] = 0.0f;           modelMatrixAOE[15] = 1.0f;
+        
     }
     
     void setUpShadowStuff()
     {
+        //set up cube map for point shadows
+        mShadowMap.setup( mShadowMapRes );
+        
         //create FBO to hold depth values from cube map
         gl::Fbo::Format formatShadow;
         formatShadow.enableColorBuffer(false);
@@ -208,7 +233,7 @@ public:
         formatShadow.setMinFilter(GL_LINEAR);
         formatShadow.setMagFilter(GL_LINEAR);
         formatShadow.setWrap(GL_CLAMP, GL_CLAMP);
-        mDepthFBO = gl::Fbo( mShadowMapRes, mShadowMapRes, formatShadow);
+        mDepthFBO   = gl::Fbo( mShadowMapRes, mShadowMapRes, formatShadow);
         
         gl::Fbo::Format format;
         format.setDepthInternalFormat( GL_DEPTH_COMPONENT24 );
@@ -217,22 +242,31 @@ public:
         mShadowsFbo	= gl::Fbo( mShadowMapRes, mShadowMapRes, format );
     }
     
-	void setPos(const Vec3f eyePos, const Vec3f targetPos)
+	void setPos(const Vec3f pos)
     {
-        mShadowCam.lookAt( eyePos, targetPos );
-        mShadowCam.setCenterOfInterestPoint( targetPos );
-        mPos = eyePos;
-        mTarget = targetPos;
+        mShadowCam.lookAt( pos, Vec3f( pos.x, 0.0f, pos.z ) );
+        modelMatrix[12] = pos.x;        modelMatrix[13] = pos.y;        modelMatrix[14] = pos.z;
+        modelMatrixAOE[12] = pos.x;     modelMatrixAOE[13] = pos.y;     modelMatrixAOE[14] = pos.z;
     }
     
     Vec3f getPos() const
     {
-        return mPos;
+        return Vec3f(modelMatrix[12], modelMatrix[13], modelMatrix[14]);
+    }
+    
+    void setTarget(const Vec3f pos)
+    {
+        mTarget = pos;
     }
     
     Vec3f getTarget() const
     {
         return mTarget;
+    }
+    
+    Vec3f getLightDirection() const
+    {
+        return (mTarget - getPos()).normalized();
     }
     
 	void setCol(const Color col)
@@ -245,13 +279,46 @@ public:
         return mCol;
     }
     
-	void renderSpotlight() const
+    void setIntensity( const float intensity )
     {
-        if( mVisible ) {
-            gl::pushMatrices();
+        mIntensity = intensity;
+    }
+    
+    float getIntensity() const
+    {
+        return mIntensity;
+    }
+    
+    void setLightMaskRadius( const float radius )
+    {
+        mMaskRadius = radius;
+    }
+    
+    float getLightMaskRadius() const
+    {
+        return mMaskRadius;
+    }
+    
+    void setLightAngle(const float angle)
+    {
+        mLightAngle = angle;
+    }
+    
+    float getLightAngle() const
+    {
+        return mLightAngle;
+    }
+    
+	void renderProxy() const
+    {
+        if( mProxyVisible ) {
             gl::draw(*mVBOMeshRef);
-            gl::popMatrices();
         }
+    }
+    
+    void renderProxyAOE() const
+    {
+        gl::draw(*mVBOMeshRef);
     }
     
     bool doesCastShadows() const {
