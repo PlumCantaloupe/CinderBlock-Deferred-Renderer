@@ -308,7 +308,7 @@ class DeferredModel
         normals.push_back( Vec3f(0, 1, 0) );
         
         //Base :
-        Vec3f basePoint = Vec3f( pointPos.x, -coneHeight, pointPos.z );
+        Vec3f basePoint = Vec3f( pointPos.x, coneHeight, pointPos.z );
         float fDeltaBaseAngle = (2 * M_PI) / numSegments;
         for (int i=0; i<numSegments; i++)
         {

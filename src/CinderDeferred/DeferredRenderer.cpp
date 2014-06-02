@@ -35,8 +35,9 @@ void DeferredRenderer::setup(   const boost::function<void(int, gl::GlslProg*)> 
 {
     //create cube VBO reference for lights
     mCubeVBOMesh = DeferredModel::getCubeVboMesh( Vec3f(0.0f, 0.0f, 0.0f), Vec3f(1.0f, 1.0f, 1.0f) );
-    mConeVBOMesh = DeferredModel::getConeVboMesh( Vec3f(0.0f, 1.0f, 0.0f), 1.0f, 0.5f, 10);
-    mSphereVBOMesh = DeferredModel::getSphereVboMesh( Vec3f(0.0f, 0.0f, 0.0f), 0.5f, Vec2i(10,10));
+    mConeVBOMesh = DeferredModel::getConeVboMesh( Vec3f(0.0f, 0.0f, 0.0f), 1.0f, 0.5f, 30);
+    mSphereVBOMesh = DeferredModel::getSphereVboMesh( Vec3f(0.0f, 0.0f, 0.0f), 0.5f, Vec2i(30,30));
+    mPlaneVBOMesh = DeferredModel::getPlaneVboMesh(Vec3f(0,0,0), 16.0f);
     
     fRenderShadowCastersFunc = renderShadowCastFunc;
     fRenderNotShadowCastersFunc = renderObjFunc;
@@ -653,23 +654,32 @@ void DeferredRenderer::drawLightPointMeshes( int shaderType, gl::GlslProg* shade
 
 void DeferredRenderer::drawLightSpotMeshes( int shaderType, gl::GlslProg* shader )
 {
-    //point lights
     for(vector<Light_Spot*>::iterator currLight = mSpotLights.begin(); currLight != mSpotLights.end(); ++currLight) {
         if ( shader ) {
             switch (shaderType) {
                 case SHADER_TYPE_DEFERRED: {
                     shader->uniform("modelViewMatrix", mCam->getModelViewMatrix() * (*currLight)->modelMatrix);
-                    (*currLight)->renderProxy(); //render the proxy shape
+                    //(*currLight)->renderProxy(); //!!!!!render the proxy shape - needs to be cone shape
                 }
                     break;
                 case SHADER_TYPE_LIGHT: {
-                    shader->uniform("light_angle", ((float)M_PI * 0.25f));// (*currLight)->getLightAngle());
+                    shader->uniform("light_angle", (*currLight)->getLightAngle());// (*currLight)->getLightAngle());
                     shader->uniform("light_col", (*currLight)->getColor());
-                    shader->uniform("light_intensity", 1.0f); //(*currLight)->getIntensity());
+                    shader->uniform("light_intensity", (*currLight)->getIntensity());
                     shader->uniform("light_pos_vs", mCam->getModelViewMatrix().transformPoint( (*currLight)->getPos() ));
                     shader->uniform("light_dir_vs", mCam->getModelViewMatrix().transformVec( (*currLight)->getLightDirection() ) );
-                    shader->uniform("modelview_mat", mCam->getModelViewMatrix() * (*currLight)->modelMatrixAOE );
+                    shader->uniform("modelview_mat", mCam->getModelViewMatrix() * (*currLight)->modelMatrixAOE  );
                     (*currLight)->renderProxyAOE(); //render the proxy shape
+                    //gl::drawSolidRect( Rectf( 0.0f, (float)mLightGlowFBO.getHeight(), (float)mLightGlowFBO.getWidth(), 0.0f) );
+                    //gl::drawSolidRect( getWindowBounds() );
+                    //gl::drawSphere(Vec3f::zero(), 50.0f);
+                    
+//                    console() << (*currLight)->getLightAngle() << "\n";
+//                    console() << (*currLight)->getColor() << "\n";
+//                    console() << (*currLight)->getIntensity() << "\n";
+//                    console() << mCam->getModelViewMatrix().transformPoint( (*currLight)->getPos() ) << "\n";
+//                    console() << mCam->getModelViewMatrix().transformVec( (*currLight)->getLightDirection() ) << "\n";
+//                    console() << "!!!\n";
                 }
                     break;
                 case SHADER_TYPE_SHADOW: {
@@ -720,10 +730,17 @@ void DeferredRenderer::renderLights()
     mLightPointShader.uniform("proj_inv_mat", mCam->getProjectionMatrix().inverted());
     mLightPointShader.uniform("view_height", mDeferredFBO.getHeight());
     mLightPointShader.uniform("view_width", mDeferredFBO.getWidth());
+    
     drawLightPointMeshes( SHADER_TYPE_LIGHT, &mLightPointShader );
+    
+    //drawLightSpotMeshes( SHADER_TYPE_LIGHT, &mLightPointShader );
+    
     mLightPointShader.unbind(); //unbind and reset everything to desired values
     
     //spot lights
+    //gl::setViewport( getWindowBounds() );
+    //gl::setMatricesWindow( getWindowSize() );
+    
     mLightSpotShader.bind(); //bind point light pixel shader
     mLightSpotShader.uniform("projection_mat", mCam->getProjectionMatrix());
     mLightSpotShader.uniform("sampler_col", 0);

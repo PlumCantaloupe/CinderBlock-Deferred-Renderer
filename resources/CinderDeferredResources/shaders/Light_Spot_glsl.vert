@@ -10,6 +10,5 @@ void main()
     //sphere proxy needs real position
     vec4 mvPosition = modelview_mat * vec4( position.xyz, 1.0 );
     gl_Position = projection_mat * mvPosition;
-    
     //gl_Position = vec4( sign( position.xy ), 0.0, 1.0 );
 }

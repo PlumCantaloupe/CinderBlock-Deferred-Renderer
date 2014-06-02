@@ -59,7 +59,7 @@ void main()
     float rhoMax = cos( light_angle * 0.5 );
 
     if ( rho <= rhoMax ) {
-        discard;
+        //discard;
     }
 
     float theta = rhoMax + 0.0001;

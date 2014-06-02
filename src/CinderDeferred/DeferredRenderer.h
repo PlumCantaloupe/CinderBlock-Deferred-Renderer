@@ -55,6 +55,7 @@ public:
     boost::function<void()> fRenderOverlayFunc;
     boost::function<void()> fRenderParticlesFunc;
     Camera              *mCam;
+    CameraOrtho         mOrthoCam;
     
     Matrix44f           mLightFaceViewMatrices[6];
 	
@@ -93,6 +94,7 @@ public:
     gl::VboMesh         mCubeVBOMesh;    //pass cube Vbo to all point lights to save on draw calls
     gl::VboMesh         mConeVBOMesh;    //pass cube Vbo to all spot lights to save on draw calls
     gl::VboMesh         mSphereVBOMesh;
+    gl::VboMesh         mPlaneVBOMesh;
     
     enum
     {
