@@ -134,6 +134,55 @@ class DeferredModel
     
 #pragma mark - static VBO primitive functions
     
+    static gl::VboMesh getFullScreenVboMesh()
+    {
+        vector<uint32_t> indices;
+        vector<Vec3f> normals;
+        vector<Vec3f> positions;
+        vector<Vec2f> texCoords;
+        
+        positions.push_back( Vec3f(-1, -1, 0) );   //left top
+        positions.push_back( Vec3f(-1, 1, 0) );    //left bottom
+        positions.push_back( Vec3f(1, -1, 0) );    //right top
+        positions.push_back( Vec3f(1, 1, 0) );     //right bottom
+        
+        normals.push_back( Vec3f(0,0,-1) );
+        normals.push_back( Vec3f(0,0,-1) );
+        normals.push_back( Vec3f(0,0,-1) );
+        normals.push_back( Vec3f(0,0,-1) );
+        
+        indices.push_back( 0 );
+        indices.push_back( 1 );
+        indices.push_back( 2 );
+        indices.push_back( 2 );
+        indices.push_back( 1 );
+        indices.push_back( 3 );
+        
+        texCoords.push_back( Vec2f(0,0) );
+        texCoords.push_back( Vec2f(0,1) );
+        texCoords.push_back( Vec2f(1,0) );
+        texCoords.push_back( Vec2f(1,1) );
+        
+        gl::VboMesh::Layout layout;
+        layout.setStaticPositions();
+        layout.setStaticIndices();
+        layout.setStaticNormals();
+        layout.setStaticTexCoords2d();
+        
+        gl::VboMesh vboMesh = gl::VboMesh( positions.size(), indices.size(), layout, GL_TRIANGLES );
+        vboMesh.bufferPositions( positions );
+        vboMesh.bufferNormals( normals );
+        vboMesh.bufferIndices( indices );
+        vboMesh.bufferTexCoords2d( 0, texCoords );
+        
+        indices.clear();
+        normals.clear();
+        positions.clear();
+        texCoords.clear();
+        
+        return vboMesh;
+    }
+    
     static gl::VboMesh getPlaneVboMesh( const Vec3f &c, const float size )
     {
         vector<uint32_t> indices;
