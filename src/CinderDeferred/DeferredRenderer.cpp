@@ -670,9 +670,9 @@ void DeferredRenderer::drawLightSpotMeshes( int shaderType, gl::GlslProg* shader
                 }
                     break;
                 case SHADER_TYPE_LIGHT: {
-                    //Vec3f eyePt = mOrthoCam.getModelViewMatrix().transformPointAffine( (*currLight)->getPos() );
-                    //Vec3f targetPt = mOrthoCam.getModelViewMatrix().transformPointAffine( (*currLight)->getTarget() );
-                    //Vec3f lightDir = targetPt - eyePt;
+                    Vec3f eyePt = mOrthoCam.getModelViewMatrix().transformPoint( (*currLight)->getPos() );
+                    Vec3f targetPt = mOrthoCam.getModelViewMatrix().transformPoint( (*currLight)->getTarget() );
+                    Vec3f lightDir = eyePt - targetPt;
                     
                     //Matrix44f shadowTransMatrix = (*currLight)->mShadowCam.getProjectionMatrix().inverted();
                     //Matrix44f shadowTransMatrix = mOrthoCam.getProjectionMatrix().inverted();
@@ -681,12 +681,12 @@ void DeferredRenderer::drawLightSpotMeshes( int shaderType, gl::GlslProg* shader
                     //Matrix44f eyePos = mOrthoCam.getModelViewMatrix().inverted();
                     //eyePos.translate( (*currLight)->getPos() );
                     
-                    shader->uniform("proj_inv_mat",  (*currLight)->mShadowCam.getProjectionMatrix().inverted());
+                    //shader->uniform("proj_inv_mat",  (*currLight)->mShadowCam.getProjectionMatrix().inverted());
                     shader->uniform("light_angle", (*currLight)->getLightAngle());// (*currLight)->getLightAngle());
                     shader->uniform("light_col", (*currLight)->getColor());
                     shader->uniform("light_intensity", (*currLight)->getIntensity());
-                    shader->uniform("light_pos_vs", mOrthoCam.getModelViewMatrix().transformPointAffine( (*currLight)->getPos() ));
-                    shader->uniform("light_dir_vs", mOrthoCam.getModelViewMatrix().transformVec( (*currLight)->getLightDirection() ) );
+                    shader->uniform("light_pos_vs", mCam->getModelViewMatrix().transformPoint( (*currLight)->getPos() ));
+                    shader->uniform("light_dir_vs", lightDir.normalized() );
                     //shader->uniform("modelview_mat", mOrthoCam.getModelViewMatrix()); // * (*currLight)->modelMatrixAOE  );
                     gl::draw( mFSQuadVBOMesh );
                     //(*currLight)->renderProxyAOE(); //render the proxy shape
@@ -783,7 +783,7 @@ void DeferredRenderer::renderLights()
     //mLightSpotShader.uniform("projection_mat", mOrthoCam.getProjectionMatrix());
     mLightSpotShader.uniform("sampler_col", 0);
     mLightSpotShader.uniform("sampler_normal_depth", 1);
-//    mLightSpotShader.uniform("proj_inv_mat", mOrthoCam.getProjectionMatrix().inverted()); 
+    mLightSpotShader.uniform("proj_inv_mat", mCam->getProjectionMatrix().inverted());
     mLightSpotShader.uniform("view_height", (float)mDeferredFBO.getHeight());
     mLightSpotShader.uniform("view_width", (float)mDeferredFBO.getWidth());
     drawLightSpotMeshes( SHADER_TYPE_LIGHT, &mLightSpotShader );

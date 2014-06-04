@@ -123,8 +123,9 @@ void main()
 
     //THREE.DeferredShaderChunk[ "combine" ],
     vec3 light = light_intensity * light_col;
-    //gl_FragColor = vec4( light * ( albedo * diffuse + specular ), attenuation );
-    gl_FragColor = vec4(light, 1);
+    gl_FragColor = vec4( light * ( albedo * diffuse + specular ), attenuation );
+    //gl_FragColor = vec4(light, 1);
+    //gl_FragColor = vec4(0,0,0,0);
 }
 
 /*
