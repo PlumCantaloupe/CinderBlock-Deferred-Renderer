@@ -196,16 +196,8 @@ public:
         mTarget = target;
         mLightAngle = lightAngle;
         mShadowMapRes = shadowMapRes;
-        
-        //set up fake "light" to grab matrix calculations from
-        mShadowCam.setPerspective( 90.0f, 1.0f, 1.0f, 100.0f );
-        updateShadowCam();
-        
         mCastShadows = castsShadows;
         mProxyVisible = proxyVisible;
-        if (mCastShadows) {
-            setUpShadowStuff();
-        }
         
         //create matrices
         float modelScale = 1.0f;
@@ -218,6 +210,11 @@ public:
         modelMatrixAOE[1] = 0.0f;           modelMatrixAOE[5] = mMaskRadius;   modelMatrixAOE[9] = 0.0f;            modelMatrixAOE[13] = pos.y;
         modelMatrixAOE[2] = 0.0f;           modelMatrixAOE[6] = 0.0f;          modelMatrixAOE[10] = mMaskRadius;    modelMatrixAOE[14] = pos.z;
         modelMatrixAOE[3] = 0.0f;           modelMatrixAOE[7] = 0.0f;          modelMatrixAOE[11] = 0.0f;           modelMatrixAOE[15] = 1.0f;
+        
+        //now set up shadow parameters
+        if (mCastShadows) {
+            setUpShadowStuff();
+        }
         
     }
     
@@ -240,6 +237,8 @@ public:
         format.setColorInternalFormat( GL_RGBA8 );
         //format.setSamples( 4 ); // enable 4x antialiasing
         mShadowsFbo	= gl::Fbo( mShadowMapRes, mShadowMapRes, format );
+        
+        updateShadowCam();
     }
     
 	void setPos(const Vec3f pos)
