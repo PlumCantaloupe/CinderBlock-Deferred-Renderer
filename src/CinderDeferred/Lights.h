@@ -199,7 +199,7 @@ public:
         
         //set up fake "light" to grab matrix calculations from
         mShadowCam.setPerspective( 90.0f, 1.0f, 1.0f, 100.0f );
-        mShadowCam.lookAt( pos, Vec3f( pos.x, 0.0f, pos.z ) );
+        updateShadowCam();
         
         mCastShadows = castsShadows;
         mProxyVisible = proxyVisible;
@@ -244,9 +244,10 @@ public:
     
 	void setPos(const Vec3f pos)
     {
-        mShadowCam.lookAt( pos, Vec3f( pos.x, 0.0f, pos.z ) );
         modelMatrix[12] = pos.x;        modelMatrix[13] = pos.y;        modelMatrix[14] = pos.z;
         modelMatrixAOE[12] = pos.x;     modelMatrixAOE[13] = pos.y;     modelMatrixAOE[14] = pos.z;
+        
+        updateShadowCam();
     }
     
     Vec3f getPos() const
@@ -257,6 +258,16 @@ public:
     void setTarget(const Vec3f pos)
     {
         mTarget = pos;
+        updateShadowCam();
+    }
+    
+    void updateShadowCam()
+    {
+        if(mCastShadows) {
+            mShadowCam.setPerspective( 90.0f, 1.0f, 1.0f, 100.0f );
+            mShadowCam.lookAt( getPos(), mTarget );
+            mShadowCam.setCenterOfInterestPoint(mTarget);
+        }
     }
     
     Vec3f getTarget() const

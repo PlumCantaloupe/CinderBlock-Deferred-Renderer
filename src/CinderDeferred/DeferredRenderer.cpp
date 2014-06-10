@@ -24,14 +24,14 @@ const int DeferredRenderer::getNumSpotLights(){
     return mSpotLights.size();
 };
 
-void DeferredRenderer::setup(   const boost::function<void(int, gl::GlslProg*)> renderShadowCastFunc,
-                                const boost::function<void(int, gl::GlslProg*)> renderObjFunc,
-                                const boost::function<void()> renderOverlayFunc,
-                                const boost::function<void()> renderParticlesFunc,
+void DeferredRenderer::setup(   //const boost::function<void(int, gl::GlslProg*)> renderShadowCastFunc,
+                                //const boost::function<void(int, gl::GlslProg*)> renderObjFunc,
                                 Camera    *cam,
                                 Vec2i     FBORes,
                                 int       shadowMapRes,
-                                int       deferFlags )
+                                int       deferFlags,
+                                const     boost::function<void()> renderOverlayFunc,
+                                const     boost::function<void()> renderParticlesFunc )
 {
     //create cube VBO reference for lights
     mCubeVBOMesh = DeferredModel::getCubeVboMesh( Vec3f(0.0f, 0.0f, 0.0f), Vec3f(1.0f, 1.0f, 1.0f) );
@@ -46,8 +46,8 @@ void DeferredRenderer::setup(   const boost::function<void(int, gl::GlslProg*)> 
 //    mCam.setCenterOfInterestPoint(Vec3f::zero());
 //    mMayaCam.setCurrentCam(mCam);
     
-    fRenderShadowCastersFunc = renderShadowCastFunc;
-    fRenderNotShadowCastersFunc = renderObjFunc;
+    //drawShadowCasters = renderShadowCastFunc;
+    //drawNonShadowCasters = renderObjFunc;
     fRenderOverlayFunc = renderOverlayFunc;
     fRenderParticlesFunc = renderParticlesFunc;
     mCam = cam;
@@ -102,14 +102,21 @@ Light_Spot* DeferredRenderer::addSpotLight(const Vec3f position, const Vec3f tar
     return newLightP;
 }
 
+DeferredModel* DeferredRenderer::addModel( gl::VboMesh& VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster, const Matrix44f modelMatrix  )
+{
+    DeferredModel *model = new DeferredModel();
+    model->setup( VBOMeshRef, mat, isShadowsCaster, modelMatrix );
+    mModels.push_back( model );
+    return model;
+}
+
 void DeferredRenderer::prepareDeferredScene()
 {
-    //clear depth and color every frame
     glClearColor( 0.5f, 0.5f, 0.5f, 1 );
     glClearDepth(1.0f);
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     
-    gl::setMatrices( *mCam );
+    //gl::setMatrices( *mCam );
     renderDeferredFBO();
     
     if( mDeferFlags & SHADOWS_ENABLED_FLAG ) {
@@ -117,7 +124,7 @@ void DeferredRenderer::prepareDeferredScene()
         renderShadowsToFBOs();
     }
     
-    gl::setMatrices( *mCam );
+    //gl::setMatrices( *mCam );
     renderLightsToFBO();
     
     if( mDeferFlags & SSAO_ENABLED_FLAG ) {
@@ -150,9 +157,7 @@ void DeferredRenderer::createShadowMaps()
             (*currPointLight)->mShadowMap.bindDepthFB( i );
             glClear(GL_DEPTH_BUFFER_BIT);
             mDepthWriteShader.uniform("modelview_mat", mLightFaceViewMatrices[i] * (*currPointLight)->mShadowCam.getModelViewMatrix());
-            if (fRenderShadowCastersFunc) {
-                fRenderShadowCastersFunc( SHADER_TYPE_DEPTH, &mDepthWriteShader );
-            }
+            drawModels( SHADER_TYPE_DEPTH, &mDepthWriteShader, true );
         }
         mDepthWriteShader.unbind();
         
@@ -173,8 +178,8 @@ void DeferredRenderer::createShadowMaps()
 ////            glReadBuffer(GL_NONE);
 //        gl::setMatrices((*currSpotLight)->mShadowCam);
 //        
-//        if (fRenderShadowCastersFunc) {
-//            fRenderShadowCastersFunc( SHADER_TYPE_NONE, NULL );
+//        if (drawShadowCasters) {
+//            drawShadowCasters( SHADER_TYPE_NONE, NULL );
 //        }
 //        
 //        (*currSpotLight)->mDepthFBO.unbindFramebuffer();
@@ -185,9 +190,7 @@ void DeferredRenderer::createShadowMaps()
         (*currSpotLight)->mDepthFBO.bindFramebuffer();
         glClear(GL_DEPTH_BUFFER_BIT);
         mDepthWriteShader.uniform("modelview_mat", (*currSpotLight)->mShadowCam.getModelViewMatrix());
-        if (fRenderShadowCastersFunc) {
-            fRenderShadowCastersFunc( SHADER_TYPE_DEPTH, &mDepthWriteShader );
-        }
+        drawModels( SHADER_TYPE_DEPTH, &mDepthWriteShader, true );
         mDepthWriteShader.unbind();
     }
     
@@ -208,7 +211,7 @@ void DeferredRenderer::renderShadowsToFBOs()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         gl::setViewport( (*currPointLight)->mShadowsFbo.getBounds() );
         glCullFace(GL_BACK); //don't need what we won't see
-        gl::setMatrices( *mCam );
+        //gl::setMatrices( *mCam );
         
         mPointShadowShader.bind();
         (*currPointLight)->mShadowMap.bind(0); //the magic texture
@@ -237,7 +240,7 @@ void DeferredRenderer::renderShadowsToFBOs()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         gl::setViewport( (*currSpotLight)->mShadowsFbo.getBounds() );
         glCullFace(GL_BACK); //don't need what we won't see
-        gl::setMatrices( *mCam );
+        //gl::setMatrices( *mCam );
         
         //get shadow matrix transform
         Matrix44f shadowTransMatrix = (*currSpotLight)->mShadowCam.getProjectionMatrix();
@@ -318,13 +321,8 @@ void DeferredRenderer::renderDeferredFBO()
     
     mDeferredShader.uniform("modelViewMatrix", mCam->getModelViewMatrix());
     
-    if (fRenderShadowCastersFunc) {
-        fRenderShadowCastersFunc( SHADER_TYPE_DEFERRED, &mDeferredShader);
-    }
-    
-    if (fRenderNotShadowCastersFunc) {
-        fRenderNotShadowCastersFunc( SHADER_TYPE_DEFERRED, &mDeferredShader);
-    }
+    drawModels( SHADER_TYPE_DEFERRED, &mDeferredShader, true);
+    drawModels( SHADER_TYPE_DEFERRED, &mDeferredShader, false);
     
     mDeferredShader.unbind();
     mDeferredFBO.unbindFramebuffer();
@@ -722,13 +720,8 @@ void DeferredRenderer::drawLightSpotMeshes( int shaderType, gl::GlslProg* shader
 
 void DeferredRenderer::drawScene( int shaderType, gl::GlslProg *shader )
 {
-    if(fRenderShadowCastersFunc) {
-        fRenderShadowCastersFunc( shaderType, shader );
-    }
-    
-    if(fRenderNotShadowCastersFunc) {
-        fRenderNotShadowCastersFunc( shaderType, shader);
-    }
+    drawModels( shaderType, shader, true );
+    drawModels( shaderType, shader, false);
     
     drawLightPointMeshes( shaderType, shader ); //!!need to relook at this for shadow-mapping as I need to pass matrices
     drawLightSpotMeshes( shaderType, shader ); //!!need to relook at this for shadow-mapping as I need to pass matrices
@@ -873,3 +866,127 @@ void DeferredRenderer::initFBOs()
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 }
+
+#pragma mark - draw functions . All drawing now doen by adding "models"
+
+void DeferredRenderer::drawModels(int shaderType, gl::GlslProg* shader, BOOL drawShadowCasters)
+{
+    if ( shader ) {
+        switch (shaderType) {
+            case DeferredRenderer::SHADER_TYPE_DEFERRED: {
+                
+                for ( vector<DeferredModel*>::iterator model = mModels.begin(); model != mModels.end(); model++ ) {
+                    
+                    //only want to draw which type sof models function is asking for
+                    if(drawShadowCasters != (*model)->_isShadowCaster) {
+                        continue;
+                    }
+                    
+                    shader->uniform("diffuse", Vec3f(1.0f, 1.0f, 1.0f));
+                    shader->uniform("specular", Vec3f(1.0f, 1.0f, 1.0f));
+                    shader->uniform("emissive", Vec3f(1.0f, 1.0f, 1.0f));
+                    shader->uniform("shininess", 10.0f);
+                    shader->uniform("additiveSpecular", 10.0f);
+                    shader->uniform("modelViewMatrix", mCam->getModelViewMatrix() * (*model)->getModelMatrix());
+                    (*model)->render();
+                }
+            }
+                break;
+            case DeferredRenderer::SHADER_TYPE_LIGHT: {
+                for ( vector<DeferredModel*>::iterator model = mModels.begin(); model != mModels.end(); model++ ) {
+                    
+                    //only want to draw which type sof models function is asking for
+                    if(drawShadowCasters != (*model)->_isShadowCaster) {
+                        continue;
+                    }
+                    
+                    shader->uniform("modelview_mat", mCam->getModelViewMatrix() * (*model)->getModelMatrix());
+                    (*model)->render();
+                }
+                break;
+            }
+            case DeferredRenderer::SHADER_TYPE_SHADOW: {
+                for ( vector<DeferredModel*>::iterator model = mModels.begin(); model != mModels.end(); model++ ) {
+                    
+                    //only want to draw which type sof models function is asking for
+                    if(drawShadowCasters != (*model)->_isShadowCaster) {
+                        continue;
+                    }
+                    
+                    shader->uniform("modelview_mat", mCam->getModelViewMatrix() * (*model)->getModelMatrix());
+                    shader->uniform("model_mat_inv", (*model)->getModelMatrix().inverted() );
+                    (*model)->render();
+                }
+                break;
+            }
+            case DeferredRenderer::SHADER_TYPE_DEPTH: {
+                for ( vector<DeferredModel*>::iterator model = mModels.begin(); model != mModels.end(); model++ ) {
+                    
+                    //only want to draw which type sof models function is asking for
+                    if(drawShadowCasters != (*model)->_isShadowCaster) {
+                        continue;
+                    }
+                    
+                    shader->uniform("model_mat", (*model)->getModelMatrix() );
+                    (*model)->render();
+                }
+                break;
+            }
+            case DeferredRenderer::SHADER_TYPE_NONE: {
+                for ( vector<DeferredModel*>::iterator model = mModels.begin(); model != mModels.end(); model++ ) {
+                    
+                    //only want to draw which type sof models function is asking for
+                    if(drawShadowCasters != (*model)->_isShadowCaster) {
+                        continue;
+                    }
+                    
+                    (*model)->render();
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
+}
+
+/*
+void DeferredRenderer::drawNonShadowCasters(int shaderType, gl::GlslProg* shader)
+{
+    if ( shader ) {
+        switch (shaderType) {
+            case DeferredRenderer::SHADER_TYPE_DEFERRED: {
+                shader->uniform("diffuse", Vec3f(1.0f, 1.0f, 1.0f));
+                shader->uniform("specular", Vec3f(1.0f, 1.0f, 1.0f));
+                shader->uniform("emissive", Vec3f(1.0f, 1.0f, 1.0f));
+                shader->uniform("shininess", 10.0f);
+                shader->uniform("additiveSpecular", 10.0f);
+                shader->uniform("modelViewMatrix", mCam->getModelViewMatrix() * mGroundPlaneModel.getModelMatrix());
+                mGroundPlaneModel.render();
+            }
+                break;
+            case DeferredRenderer::SHADER_TYPE_LIGHT: {
+                shader->uniform("modelview_mat", mCam.getModelViewMatrix() * mGroundPlaneModel.getModelMatrix());
+                mGroundPlaneModel.render();
+                break;
+            }
+            case DeferredRenderer::SHADER_TYPE_SHADOW: {
+                shader->uniform("modelview_mat", mCam.getModelViewMatrix() * mGroundPlaneModel.getModelMatrix());
+                mGroundPlaneModel.render();
+                break;
+            }
+            case DeferredRenderer::SHADER_TYPE_DEPTH: {
+                shader->uniform("model_mat", mGroundPlaneModel.getModelMatrix());
+                mGroundPlaneModel.render();
+                break;
+            }
+            case DeferredRenderer::SHADER_TYPE_NONE: {
+                mGroundPlaneModel.render();
+                break;
+            }
+            default:
+                break;
+        }
+    }
+}
+*/

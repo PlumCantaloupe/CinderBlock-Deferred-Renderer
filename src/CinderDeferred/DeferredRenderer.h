@@ -50,8 +50,8 @@ public:
         FBO_PARTICLES
     };
     
-    boost::function<void(int, gl::GlslProg*)> fRenderShadowCastersFunc;
-    boost::function<void(int, gl::GlslProg*)> fRenderNotShadowCastersFunc;
+    //boost::function<void(int, gl::GlslProg*)> fRenderShadowCastersFunc;
+    //boost::function<void(int, gl::GlslProg*)> fRenderNotShadowCastersFunc;
     boost::function<void()> fRenderOverlayFunc;
     boost::function<void()> fRenderParticlesFunc;
     Camera              *mCam;
@@ -87,6 +87,8 @@ public:
     
     vector<Light_Point*>    mPointLights;
     vector<Light_Spot*>     mSpotLights;
+    
+    vector<DeferredModel*>  mModels;
     
     Vec2i               mFBOResolution;
     int                 mShadowMapRes;
@@ -134,17 +136,21 @@ public:
     vector<Light_Spot*>* getSpotLightsRef();
     const int getNumSpotLights();
     
-    void setup( const boost::function<void(int, gl::GlslProg*)> renderShadowCastFunc,
-               const boost::function<void(int, gl::GlslProg*)> renderObjFunc,
-               const boost::function<void()> renderOverlayFunc,
-               const boost::function<void()> renderParticlesFunc,
+    void setup( //const boost::function<void(int, gl::GlslProg*)> renderShadowCastFunc,
+               //const boost::function<void(int, gl::GlslProg*)> renderObjFunc,
                Camera    *cam,
                Vec2i     FBORes = Vec2i(512, 512),
                int       shadowMapRes = 512,
-               int       deferFlags = SHADOWS_ENABLED_FLAG | SSAO_ENABLED_FLAG | FXAA_ENABLED_FLAG );
+               int       deferFlags = SHADOWS_ENABLED_FLAG | SSAO_ENABLED_FLAG | FXAA_ENABLED_FLAG,
+               const     boost::function<void()> renderOverlayFunc = NULL,
+               const     boost::function<void()> renderParticlesFunc = NULL );
     
-    Light_Point* addPointLight(const Vec3f position, const Color color, const float intensity, const bool castsShadows = false, const bool visible = false);
+    Light_Point* addPointLight(const Vec3f position, const Color color, const float intensity, const bool castsShadows, const bool visible = false);
     Light_Spot* addSpotLight(const Vec3f position, const Vec3f target, const Color color, const float intensity, const float lightAngle, const bool castsShadows, const bool visible);
+    DeferredModel* addModel( gl::VboMesh& VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster, const Matrix44f modelMatrix = Matrix44f::identity() );
+    
+    //todo .. add remove functionality (using procedurally unique ids)
+    
     void prepareDeferredScene();
     void createShadowMaps();
     void renderShadowsToFBOs();
@@ -161,4 +167,7 @@ public:
     void initTextures();
     void initShaders();
     void initFBOs();
+    
+    void drawModels(int shaderType, gl::GlslProg* shader, BOOL drawShadowCasters);
+//    void drawNonShadowCasters(int shaderType, gl::GlslProg* shader);
 };

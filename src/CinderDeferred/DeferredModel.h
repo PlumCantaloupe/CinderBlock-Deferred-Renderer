@@ -26,6 +26,7 @@ class DeferredModel
 {
     public:
     DeferredMaterial material; //can use textures to replace these properties
+    BOOL _isShadowCaster;
     
     protected:
     gl::VboMesh mVBOMeshRef;   //keeping as pointer so VBO's can be shared if many similar instances
@@ -43,10 +44,11 @@ class DeferredModel
     DeferredModel()
     {}
     
-    void setup( gl::VboMesh VBOMeshRef, const DeferredMaterial mat, const Matrix44f modelMatrix = Matrix44f::identity() )
+    void setup( gl::VboMesh VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster = true, const Matrix44f modelMatrix = Matrix44f::identity() )
     {
         mVBOMeshRef = VBOMeshRef;
         material = mat;
+        _isShadowCaster = isShadowsCaster;
         mModelMatrix = modelMatrix;
     }
     
