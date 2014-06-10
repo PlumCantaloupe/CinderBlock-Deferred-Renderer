@@ -53,18 +53,9 @@ public:
         mCol = col;
         mIntensity = intensity;
         mMaskRadius = intensity * 100.0f;
-        //mAOEDist = lightRadius; //sqrt( col.length()/LIGHT_CUTOFF_DEFAULT );
         mShadowMapRes = shadowMapRes;
-        
-        //set up fake "light" to grab matrix calculations from
-        mShadowCam.setPerspective( 90.0f, 1.0f, 1.0f, 100.0f );
-        mShadowCam.lookAt( pos, Vec3f( pos.x, 0.0f, pos.z ) );
-        
         mCastShadows = castsShadows;
         mProxyVisible = proxyVisible;
-        if (mCastShadows) {
-            setUpShadowStuff();
-        }
         
         //create matrices
         float modelScale = 1.0f;
@@ -78,6 +69,22 @@ public:
         modelMatrixAOE[2] = 0.0f;           modelMatrixAOE[6] = 0.0f;          modelMatrixAOE[10] = mMaskRadius;    modelMatrixAOE[14] = pos.z;
         modelMatrixAOE[3] = 0.0f;           modelMatrixAOE[7] = 0.0f;          modelMatrixAOE[11] = 0.0f;           modelMatrixAOE[15] = 1.0f;
         
+        //now set up shadow parameters
+        if (mCastShadows) {
+            setUpShadowStuff();
+        }
+        
+    }
+    
+    void updateShadowCam()
+    {
+        if(mCastShadows) {
+            Vec3f eye = getPos();
+            Vec3f target = Vec3f(eye.x, 0.0f, eye.z);
+            mShadowCam.setPerspective( 90.0f, 1.0f, 1.0f, 100.0f );
+            mShadowCam.lookAt( eye, target );
+            mShadowCam.setCenterOfInterestPoint(target);
+        }
     }
     
     void setUpShadowStuff()
@@ -99,13 +106,17 @@ public:
         format.setColorInternalFormat( GL_RGBA8 );
         //format.setSamples( 4 ); // enable 4x antialiasing
         mShadowsFbo	= gl::Fbo( mShadowMapRes, mShadowMapRes, format );
+        
+        updateShadowCam();
     }
     
 	void setPos(const Vec3f pos)
     {
         mShadowCam.lookAt( pos, Vec3f( pos.x, 0.0f, pos.z ) );
         modelMatrix[12] = pos.x;        modelMatrix[13] = pos.y;        modelMatrix[14] = pos.z;
-        modelMatrixAOE[12] = pos.x;         modelMatrixAOE[13] = pos.y;         modelMatrixAOE[14] = pos.z;
+        modelMatrixAOE[12] = pos.x;     modelMatrixAOE[13] = pos.y;     modelMatrixAOE[14] = pos.z;
+        
+        updateShadowCam();
     }
     
     Vec3f getPos() const
