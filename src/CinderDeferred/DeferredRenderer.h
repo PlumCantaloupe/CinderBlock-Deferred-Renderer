@@ -84,6 +84,7 @@ public:
     gl::GlslProg		mAlphaToRBG;
 	gl::GlslProg		mFXAAShader;
     gl::GlslProg		mDepthWriteShader;
+    gl::GlslProg		mBasicShader;
     
     vector<Light_Point*>    mPointLights;
     vector<Light_Spot*>     mSpotLights;
@@ -139,14 +140,12 @@ public:
     vector<Light_Spot*>* getSpotLightsRef();
     const int getNumSpotLights();
     
-    void setup( //const boost::function<void(int, gl::GlslProg*)> renderShadowCastFunc,
-               //const boost::function<void(int, gl::GlslProg*)> renderObjFunc,
-               Camera    *cam,
-               Vec2i     FBORes = Vec2i(512, 512),
-               int       shadowMapRes = 512,
-               int       deferFlags = SHADOWS_ENABLED_FLAG | SSAO_ENABLED_FLAG | FXAA_ENABLED_FLAG,
-               const     boost::function<void()> renderOverlayFunc = NULL,
-               const     boost::function<void()> renderParticlesFunc = NULL );
+    void setup( Camera    *cam,
+                Vec2i     FBORes = Vec2i(512, 512),
+                int       shadowMapRes = 512,
+                int       deferFlags = SHADOWS_ENABLED_FLAG | SSAO_ENABLED_FLAG | FXAA_ENABLED_FLAG,
+                const     boost::function<void()> renderOverlayFunc = NULL,
+                const     boost::function<void()> renderParticlesFunc = NULL );
     
     Light_Point* addPointLight(const Vec3f position, const Color color, const float intensity, const bool castsShadows, const bool visible = false);
     Light_Spot* addSpotLight(const Vec3f position, const Vec3f target, const Color color, const float intensity, const float lightAngle, const bool castsShadows, const bool visible);
@@ -172,5 +171,4 @@ public:
     void initFBOs();
     
     void drawModels(int shaderType, gl::GlslProg* shader, BOOL drawShadowCasters);
-//    void drawNonShadowCasters(int shaderType, gl::GlslProg* shader);
 };

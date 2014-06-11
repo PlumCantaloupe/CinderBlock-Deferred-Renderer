@@ -77,7 +77,7 @@ class DeferredModel
     
     void setRotation( const Quatf rotation )
     {
-        
+        //TODO
     }
     
     Quatf getRotation() const
@@ -95,36 +95,6 @@ class DeferredModel
     Vec3f getScale() const
     {
         return Vec3f();
-    }
-    
-    void setDiffuseTexture( gl::Texture *tex )
-    {
-        diffuseTex = tex;
-    }
-    
-    void setSpecularTexture( gl::Texture *tex )
-    {
-        specularTex = tex;
-    }
-    
-    void setEmissionTexture( gl::Texture *tex )
-    {
-        emissiveTex = tex;
-    }
-    
-    void setShininessTexture( gl::Texture *tex )
-    {
-        shininessTex = tex;
-    }
-    
-    void setAdditiveSpecularTexture( gl::Texture *tex )
-    {
-        additiveSpecularTex = tex;
-    }
-    
-    void setNormalTexture( gl::Texture *tex )
-    {
-        normalTex = tex;
     }
     
     void render()
