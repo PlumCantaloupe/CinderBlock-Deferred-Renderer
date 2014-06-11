@@ -25,6 +25,7 @@ uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat3 normalMatrix;
 
+varying vec2 uv;                                //out
 varying vec3 vColor;                            //out
 varying vec3 normalView;                        //out
 varying vec4 clipPos;                           //out
@@ -35,6 +36,7 @@ void main() {
     vec3 normal = gl_Normal;                    //in
     vec4 color = gl_Color;                      //in
     gl_FrontColor = gl_Color;
+    uv = gl_MultiTexCoord0.st;
     
     vColor = color.rgb;
     

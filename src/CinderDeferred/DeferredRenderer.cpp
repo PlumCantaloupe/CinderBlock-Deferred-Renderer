@@ -311,6 +311,7 @@ void DeferredRenderer::renderDeferredFBO()
     mDeferredShader.uniform("emissive", Vec3f(1.0f, 1.0f, 1.0f));
     mDeferredShader.uniform("shininess", 10.0f);
     mDeferredShader.uniform("additiveSpecular", 10.0f);
+    
     Matrix33f normalMatrix = mCam->getModelViewMatrix().subMatrix33(0, 0);
     normalMatrix.invert();
     normalMatrix.transpose();
@@ -534,13 +535,13 @@ void DeferredRenderer::renderQuad( const int renderType, Rectf renderQuad, const
             gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
             mFinalSSFBO.getTexture().bind(0);
             
-            if( mDeferFlags & FXAA_ENABLED_FLAG ) {
+            if( (mDeferFlags & FXAA_ENABLED_FLAG) && !(mDeferFlags & (MSAA_4X_ENABLED_FLAG | MSAA_8X_ENABLED_FLAG | MSAA_16X_ENABLED_FLAG)) ) {
                 mFXAAShader.bind();
                 mFXAAShader.uniform("buf0", 0);
                 mFXAAShader.uniform("frameBufSize", Vec2f((float)mFinalSSFBO.getWidth(), (float)mFinalSSFBO.getHeight()));
             }
             gl::drawSolidRect( renderQuad );
-            if( mDeferFlags & FXAA_ENABLED_FLAG ) {
+            if( (mDeferFlags & FXAA_ENABLED_FLAG) && !(mDeferFlags & (MSAA_4X_ENABLED_FLAG | MSAA_8X_ENABLED_FLAG | MSAA_16X_ENABLED_FLAG)) ) {
                 mFXAAShader.unbind();
             }
             mFinalSSFBO.getTexture().unbind(0);
@@ -801,23 +802,21 @@ void DeferredRenderer::initShaders()
     mDeferredShader         = gl::GlslProg( loadResource( RES_GLSL_DEFER_VERT ), loadResource( RES_GLSL_DEFER_FRAG ) );
     mBasicBlender           = gl::GlslProg( loadResource( RES_GLSL_BASIC_BLENDER_VERT ), loadResource( RES_GLSL_BASIC_BLENDER_FRAG ) );
     
-    if( mDeferFlags & SSAO_ENABLED_FLAG ) {
+    if(mDeferFlags & SSAO_ENABLED_FLAG) {
         mSSAOShader			= gl::GlslProg( loadResource( RES_GLSL_SSAO_VERT ), loadResource( RES_GLSL_SSAO_FRAG ) );
-        mHBlurShader		= gl::GlslProg( loadResource( RES_GLSL_BLUR_H_VERT ), loadResource( RES_GLSL_BLUR_H_FRAG ) );
-        mVBlurShader		= gl::GlslProg( loadResource( RES_GLSL_BLUR_V_VERT ), loadResource( RES_GLSL_BLUR_V_FRAG ) );
     }
+    mHBlurShader		= gl::GlslProg( loadResource( RES_GLSL_BLUR_H_VERT ), loadResource( RES_GLSL_BLUR_H_FRAG ) );
+    mVBlurShader		= gl::GlslProg( loadResource( RES_GLSL_BLUR_V_VERT ), loadResource( RES_GLSL_BLUR_V_FRAG ) );
     
     mLightPointShader		= gl::GlslProg( loadResource( RES_GLSL_LIGHT_POINT_VERT ), loadResource( RES_GLSL_LIGHT_POINT_FRAG ) );
     mLightSpotShader		= gl::GlslProg( loadResource( RES_GLSL_LIGHT_SPOT_VERT ), loadResource( RES_GLSL_LIGHT_SPOT_FRAG ) );
     mAlphaToRBG             = gl::GlslProg( loadResource( RES_GLSL_ALPHA_RGB_VERT ), loadResource( RES_GLSL_ALPHA_RGB_FRAG ) );
     
-    if ( mDeferFlags & SHADOWS_ENABLED_FLAG ) {
-        mPointShadowShader      = gl::GlslProg( loadResource( RES_GLSL_POINTSHADOW_VERT ), loadResource( RES_GLSL_POINTSHADOW_FRAG ) );
-        mSpotShadowShader   = gl::GlslProg( loadResource( RES_GLSL_SPOTSHADOW_VERT ), loadResource( RES_GLSL_SPOTSHADOW_FRAG ) );
-        mDepthWriteShader   = gl::GlslProg( loadResource( RES_GLSL_DEPTHWRITE_VERT ), loadResource( RES_GLSL_DEPTHWRITE_FRAG ) );
-    }
+    mPointShadowShader      = gl::GlslProg( loadResource( RES_GLSL_POINTSHADOW_VERT ), loadResource( RES_GLSL_POINTSHADOW_FRAG ) );
+    mSpotShadowShader   = gl::GlslProg( loadResource( RES_GLSL_SPOTSHADOW_VERT ), loadResource( RES_GLSL_SPOTSHADOW_FRAG ) );
+    mDepthWriteShader   = gl::GlslProg( loadResource( RES_GLSL_DEPTHWRITE_VERT ), loadResource( RES_GLSL_DEPTHWRITE_FRAG ) );
     
-    if ( mDeferFlags & FXAA_ENABLED_FLAG ) {
+    if( (mDeferFlags & FXAA_ENABLED_FLAG) && !(mDeferFlags & (MSAA_4X_ENABLED_FLAG | MSAA_8X_ENABLED_FLAG | MSAA_16X_ENABLED_FLAG)) ) {
         mFXAAShader			= gl::GlslProg( loadResource( RES_GLSL_FXAA_VERT ), loadResource( RES_GLSL_FXAA_FRAG ) );
     }
 }
@@ -830,7 +829,16 @@ void DeferredRenderer::initFBOs()
     deferredFBO.setDepthInternalFormat( GL_DEPTH_COMPONENT24 ); //want fbo to have precision depth map as well
     deferredFBO.setColorInternalFormat( GL_RGBA32F_ARB );
     deferredFBO.enableColorBuffer( true, 2 ); // create an FBO with two color attachments (basic diffuse and normal/depth view, get position from depth)
-    //deferredFBO.setSamples(4);
+    
+    if (mDeferFlags & MSAA_16X_ENABLED_FLAG) {
+        deferredFBO.setSamples(16); //only deferred shader for now
+    }
+    else if (mDeferFlags & MSAA_8X_ENABLED_FLAG) {
+        deferredFBO.setSamples(8); //only deferred shader for now
+    }
+    else if (mDeferFlags & MSAA_4X_ENABLED_FLAG) {
+        deferredFBO.setSamples(4); //only deferred shader for now
+    }
     
     gl::Fbo::Format basicFormat;
     basicFormat.enableDepthBuffer(false); //don't need depth "layers"
@@ -843,24 +851,22 @@ void DeferredRenderer::initFBOs()
     mDeferredFBO	= gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   deferredFBO );
     mLightGlowFBO   = gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   basicFormat );
     
-    if ( mDeferFlags & SSAO_ENABLED_FLAG ) {
-        mPingPongBlurH	= gl::Fbo( mFBOResolution.x/2,  mFBOResolution.y/2, basicFormat ); //don't need as high res on ssao as it will be blurred anyhow ...
-        mPingPongBlurV	= gl::Fbo( mFBOResolution.x/2,  mFBOResolution.y/2, basicFormat );
-        mSSAOMap		= gl::Fbo( mFBOResolution.x/2,  mFBOResolution.y/2, basicFormat );
-    }
-    
-    if ( mDeferFlags & SHADOWS_ENABLED_FLAG ) {
+    mPingPongBlurH	= gl::Fbo( mFBOResolution.x/2,  mFBOResolution.y/2, basicFormat ); //don't need as high res on ssao as it will be blurred anyhow ...
+    mPingPongBlurV	= gl::Fbo( mFBOResolution.x/2,  mFBOResolution.y/2, basicFormat );
+    mSSAOMap		= gl::Fbo( mFBOResolution.x/2,  mFBOResolution.y/2, basicFormat );
+
+    if(mDeferFlags & SHADOWS_ENABLED_FLAG) {
         mAllShadowsFBO  = gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   basicFormat );
     }
-    
-    if(fRenderOverlayFunc) {
+
+    if ( fRenderOverlayFunc ) {
         mOverlayFBO     = gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   basicFormat );
     }
     
-    if(fRenderParticlesFunc) {
+    if ( fRenderParticlesFunc ) {
         mParticlesFBO   = gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   basicDepthFormat );
     }
-    
+
     mFinalSSFBO		= gl::Fbo( mFBOResolution.x,    mFBOResolution.y,   basicFormat );
     
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE );
@@ -882,13 +888,26 @@ void DeferredRenderer::drawModels(int shaderType, gl::GlslProg* shader, BOOL dra
                         continue;
                     }
                     
-                    shader->uniform("diffuse", Vec3f(1.0f, 1.0f, 1.0f));
-                    shader->uniform("specular", Vec3f(1.0f, 1.0f, 1.0f));
-                    shader->uniform("emissive", Vec3f(1.0f, 1.0f, 1.0f));
-                    shader->uniform("shininess", 10.0f);
-                    shader->uniform("additiveSpecular", 10.0f);
+                    if( (*model)->diffuseTex ) {
+                        (*model)->diffuseTex->bind(0);
+                        mDeferredShader.uniform("useDiffuseTex", 1.0f);
+                        mDeferredShader.uniform("texDiffuse", 0);
+                    }
+                    else {
+                        mDeferredShader.uniform("useDiffuseTex", 0.0f);
+                    }
+                    
+                    shader->uniform("diffuse", (*model)->material.diffuseCol );
+                    shader->uniform("specular", (*model)->material.specularCol );
+                    shader->uniform("emissive", (*model)->material.emissiveCol );
+                    shader->uniform("shininess", (*model)->material.shininess );
+                    shader->uniform("additiveSpecular", (*model)->material.additiveSpecular );
                     shader->uniform("modelViewMatrix", mCam->getModelViewMatrix() * (*model)->getModelMatrix());
                     (*model)->render();
+                    
+                    if( (*model)->diffuseTex ) {
+                        (*model)->diffuseTex->unbind(0);
+                    }
                 }
             }
                 break;
@@ -949,44 +968,3 @@ void DeferredRenderer::drawModels(int shaderType, gl::GlslProg* shader, BOOL dra
         }
     }
 }
-
-/*
-void DeferredRenderer::drawNonShadowCasters(int shaderType, gl::GlslProg* shader)
-{
-    if ( shader ) {
-        switch (shaderType) {
-            case DeferredRenderer::SHADER_TYPE_DEFERRED: {
-                shader->uniform("diffuse", Vec3f(1.0f, 1.0f, 1.0f));
-                shader->uniform("specular", Vec3f(1.0f, 1.0f, 1.0f));
-                shader->uniform("emissive", Vec3f(1.0f, 1.0f, 1.0f));
-                shader->uniform("shininess", 10.0f);
-                shader->uniform("additiveSpecular", 10.0f);
-                shader->uniform("modelViewMatrix", mCam->getModelViewMatrix() * mGroundPlaneModel.getModelMatrix());
-                mGroundPlaneModel.render();
-            }
-                break;
-            case DeferredRenderer::SHADER_TYPE_LIGHT: {
-                shader->uniform("modelview_mat", mCam.getModelViewMatrix() * mGroundPlaneModel.getModelMatrix());
-                mGroundPlaneModel.render();
-                break;
-            }
-            case DeferredRenderer::SHADER_TYPE_SHADOW: {
-                shader->uniform("modelview_mat", mCam.getModelViewMatrix() * mGroundPlaneModel.getModelMatrix());
-                mGroundPlaneModel.render();
-                break;
-            }
-            case DeferredRenderer::SHADER_TYPE_DEPTH: {
-                shader->uniform("model_mat", mGroundPlaneModel.getModelMatrix());
-                mGroundPlaneModel.render();
-                break;
-            }
-            case DeferredRenderer::SHADER_TYPE_NONE: {
-                mGroundPlaneModel.render();
-                break;
-            }
-            default:
-                break;
-        }
-    }
-}
-*/

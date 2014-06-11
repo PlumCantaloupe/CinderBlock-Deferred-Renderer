@@ -238,15 +238,15 @@ public:
         gl::Fbo::Format formatShadow;
         formatShadow.enableColorBuffer(false);
         formatShadow.enableDepthBuffer(true, true);
+        formatShadow.setDepthInternalFormat( GL_DEPTH_COMPONENT24 );
         formatShadow.setMinFilter(GL_LINEAR);
         formatShadow.setMagFilter(GL_LINEAR);
         formatShadow.setWrap(GL_CLAMP, GL_CLAMP);
         mDepthFBO   = gl::Fbo( mShadowMapRes, mShadowMapRes, formatShadow);
         
         gl::Fbo::Format format;
-        format.setDepthInternalFormat( GL_DEPTH_COMPONENT24 );
+        format.enableDepthBuffer(true, false);
         format.setColorInternalFormat( GL_RGBA8 );
-        //format.setSamples( 4 ); // enable 4x antialiasing
         mShadowsFbo	= gl::Fbo( mShadowMapRes, mShadowMapRes, format );
         
         updateShadowCam();

@@ -35,31 +35,10 @@ uniform float additiveSpecular;
 uniform float useDiffuseTex;
 uniform sampler2D texDiffuse;
 
+varying vec2 uv;                                //in
 varying vec3 vColor;                            //in
 varying vec3 normalView;                        //in
 varying vec4 clipPos;                           //in
-
-//THREE.ShaderChunk[ "color_pars_fragment" ],
-//THREE.ShaderChunk[ "map_pars_fragment" ],
-//THREE.ShaderChunk[ "lightmap_pars_fragment" ],
-
-//#ifdef USE_ENVMAP
-//varying vec3 vWorldPosition;
-//
-//uniform float reflectivity;
-//uniform samplerCube envMap;
-//uniform float flipEnvMap;
-//uniform int combine;
-//uniform bool useRefract;
-//uniform float refractionRatio;
-//uniform sampler2D samplerNormalDepth;
-//uniform float viewHeight;
-//uniform float viewWidth;
-//#endif
-
-//THREE.ShaderChunk[ "fog_pars_fragment" ],
-//THREE.ShaderChunk[ "shadowmap_pars_fragment" ],
-//THREE.ShaderChunk[ "specularmap_pars_fragment" ],
 
 const float unit = 255.0/256.0;
 float vec3_to_float( vec3 data )
@@ -74,7 +53,7 @@ void main()
     vec4 finalNormalDepth;
     
     const float opacity = 1.0; //no transparency
-    finalDiffuse = vec4( diffuse, opacity );
+    finalDiffuse = (vec4( diffuse, opacity ) * (1.0 - useDiffuseTex)) + (texture2D(texDiffuse, uv) * useDiffuseTex);
 
     const float compressionScale = 0.999;
     vec3 diffuseMapColor;

@@ -119,7 +119,10 @@ public:
     enum {
         SHADOWS_ENABLED_FLAG    = (1 << 0),
         SSAO_ENABLED_FLAG       = (1 << 1),
-        FXAA_ENABLED_FLAG       = (1 << 2)
+        FXAA_ENABLED_FLAG       = (1 << 2),
+        MSAA_4X_ENABLED_FLAG    = (1 << 3),
+        MSAA_8X_ENABLED_FLAG    = (1 << 4),
+        MSAA_16X_ENABLED_FLAG   = (1 << 5)
     };
     
     enum {

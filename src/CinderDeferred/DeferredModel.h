@@ -28,7 +28,6 @@ class DeferredModel
     DeferredMaterial material; //can use textures to replace these properties
     BOOL _isShadowCaster;
     
-    protected:
     gl::VboMesh mVBOMeshRef;   //keeping as pointer so VBO's can be shared if many similar instances
     Matrix44f   mModelMatrix;   //in trying to be forward thinking we will think in terms of matrices not pos, scale, rotation. Use glMultMatrixf( mModelMatrix ) if you must use immediate mode
     
@@ -42,7 +41,14 @@ class DeferredModel
     
     public:
     DeferredModel()
-    {}
+    {
+        diffuseTex = NULL;
+        specularTex = NULL;
+        emissiveTex = NULL;
+        shininessTex = NULL;
+        additiveSpecularTex = NULL;
+        normalTex = NULL;
+    }
     
     void setup( gl::VboMesh VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster = true, const Matrix44f modelMatrix = Matrix44f::identity() )
     {

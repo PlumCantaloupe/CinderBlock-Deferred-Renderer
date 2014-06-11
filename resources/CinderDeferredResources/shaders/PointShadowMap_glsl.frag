@@ -3,16 +3,13 @@
 
 uniform samplerCubeShadow shadow;
 uniform vec3 light_pos;
-uniform mat4 light_modelview_mat;
 uniform mat4 light_projection_mat;
-uniform mat4 camera_modelview_mat_inv;
-uniform mat4 model_mat_inv;
 
 varying vec4 pos_cs;
+varying vec4 pos_ls;
 
 void main()
 {
-    vec4 pos_ls = light_modelview_mat * camera_modelview_mat_inv * model_mat_inv * pos_cs;
     vec4 abs_pos = abs(pos_ls);
     float fs_z = -max(abs_pos.x, max(abs_pos.y, abs_pos.z));
     vec4 clip = light_projection_mat * vec4(0.0, 0.0, fs_z, 1.0);
