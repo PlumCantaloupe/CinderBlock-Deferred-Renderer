@@ -55,7 +55,7 @@ void main()
     const float opacity = 1.0; //no transparency
     finalDiffuse = (vec4( diffuse, opacity ) * (1.0 - useDiffuseTex)) + (texture2D(texDiffuse, uv) * useDiffuseTex);
 
-    const float compressionScale = 0.999;
+    const float compressionScale = 0.999; //255.0/256.0;
     vec3 diffuseMapColor;
     diffuseMapColor = vec3( 1.0 );
 
@@ -73,8 +73,8 @@ void main()
     finalDiffuse.z = shininess; //shininess
     finalDiffuse.w = vec3_to_float( compressionScale * emissive * diffuseMapColor * vColor ); //emissive color
     
-    vec3 normal = normalize( normalView );
-    finalNormalDepth.xyz = normal * 0.5 + 0.5;
+    vec3 normal = normalize( normalView ) * 0.5 + 0.5;
+    finalNormalDepth.xyz = normal;
     finalNormalDepth.w = clipPos.z / clipPos.w;
     
     gl_FragData[0] = finalDiffuse;

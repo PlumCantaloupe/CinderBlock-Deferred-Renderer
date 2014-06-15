@@ -14,7 +14,6 @@ uniform vec3 light_pos_vs;
 
 uniform mat4 proj_inv_mat;
 
-//THREE.DeferredShaderChunk[ "unpackFloat" ],
 vec3 float_to_vec3( float data )
 {
     vec3 uncompressed;
@@ -24,13 +23,6 @@ vec3 float_to_vec3( float data )
     uncompressed.y = fract( floor( data - ( zInt * 255.0 ) ) / 255.0 );
     return uncompressed;
 }
-
-//vec3 reconstruct_position(float depth, vec2 tex_coord)
-//{
-//    vec4 pos = vec4( (tex_coord.x-0.5)*2, (tex_coord.y-0.5)*2, 1, 1 );
-//    vec4 ray = proj_inv_mat * pos;
-//    return ray.xyz * depth;
-//}
 
 void main()
 {
