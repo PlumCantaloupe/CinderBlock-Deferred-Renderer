@@ -35,7 +35,6 @@ void DeferredRenderer::setup(   Camera    *cam,
     mCubeVBOMesh = DeferredModel::getCubeVboMesh( Vec3f(0.0f, 0.0f, 0.0f), Vec3f(1.0f, 1.0f, 1.0f) );
     mConeVBOMesh = DeferredModel::getConeVboMesh( Vec3f(0.0f, 0.0f, 0.0f), 1.0f, 0.5f, 30);
     mSphereVBOMesh = DeferredModel::getSphereVboMesh( Vec3f(0.0f, 0.0f, 0.0f), 0.5f, Vec2i(30,30));
-    mFSQuadVBOMesh = DeferredModel::getFullScreenVboMesh();
     
     mOrthoCam = CameraOrtho(-1, 1, -1, 1, 0, 1);
     
@@ -76,7 +75,6 @@ void DeferredRenderer::setup(   Camera    *cam,
     
     initTextures();
     initFBOs();
-    initShaders();
 }
 
 Light_Point* DeferredRenderer::addPointLight(const Vec3f position, const Color color, const float intensity, const bool castsShadows, const bool visible)
@@ -88,7 +86,7 @@ Light_Point* DeferredRenderer::addPointLight(const Vec3f position, const Color c
 
 Light_Spot* DeferredRenderer::addSpotLight(const Vec3f position, const Vec3f target, const Color color, const float intensity, const float lightAngle, const bool castsShadows, const bool visible)
 {
-    Light_Spot *newLightP = new Light_Spot( &mFSQuadVBOMesh, position, target, color, intensity, lightAngle, mShadowMapRes, (castsShadows && (mDeferFlags & SHADOWS_ENABLED_FLAG)), visible );
+    Light_Spot *newLightP = new Light_Spot( &DeferredResources::getSingleton().VBO_FULLSCREEN_QUAD, position, target, color, intensity, lightAngle, mShadowMapRes, (castsShadows && (mDeferFlags & SHADOWS_ENABLED_FLAG)), visible );
     mSpotLights.push_back( newLightP );
     return newLightP;
 }
@@ -99,6 +97,11 @@ DeferredModel* DeferredRenderer::addModel( gl::VboMesh& VBOMeshRef, const Deferr
     model->setup( VBOMeshRef, mat, isShadowsCaster, modelMatrix );
     mModels.push_back( model );
     return model;
+}
+
+void DeferredRenderer::addModel( DeferredModel *model )
+{
+    mModels.push_back( model );
 }
 
 void DeferredRenderer::prepareDeferredScene()
@@ -145,15 +148,15 @@ void DeferredRenderer::createShadowMaps()
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
         
-        mDepthWriteShader.bind();
-        mDepthWriteShader.uniform("projection_mat", (*currPointLight)->mShadowCam.getProjectionMatrix());
+        DeferredResources::getSingleton().SHADER_DEPTH_WRITE.bind();
+        DeferredResources::getSingleton().SHADER_DEPTH_WRITE.uniform("projection_mat", (*currPointLight)->mShadowCam.getProjectionMatrix());
         for (size_t i = 0; i < 6; ++i) {
             (*currPointLight)->mShadowMap.bindDepthFB( i );
             glClear(GL_DEPTH_BUFFER_BIT);
-            mDepthWriteShader.uniform("modelview_mat", mLightFaceViewMatrices[i] * (*currPointLight)->mShadowCam.getModelViewMatrix());
-            drawModels( SHADER_TYPE_DEPTH, &mDepthWriteShader, true );
+            DeferredResources::getSingleton().SHADER_DEPTH_WRITE.uniform("modelview_mat", mLightFaceViewMatrices[i] * (*currPointLight)->mShadowCam.getModelViewMatrix());
+            drawModels( SHADER_TYPE_DEPTH, &DeferredResources::getSingleton().SHADER_DEPTH_WRITE, true );
         }
-        mDepthWriteShader.unbind();
+        DeferredResources::getSingleton().SHADER_DEPTH_WRITE.unbind();
         
         (*currPointLight)->mDepthFBO.unbindFramebuffer();
     }
@@ -179,13 +182,13 @@ void DeferredRenderer::createShadowMaps()
 //        (*currSpotLight)->mDepthFBO.unbindFramebuffer();
         
         glViewport(0, 0, mShadowMapRes, mShadowMapRes);
-        mDepthWriteShader.bind();
-        mDepthWriteShader.uniform("projection_mat", (*currSpotLight)->mShadowCam.getProjectionMatrix());
+        DeferredResources::getSingleton().SHADER_DEPTH_WRITE.bind();
+        DeferredResources::getSingleton().SHADER_DEPTH_WRITE.uniform("projection_mat", (*currSpotLight)->mShadowCam.getProjectionMatrix());
         (*currSpotLight)->mDepthFBO.bindFramebuffer();
         glClear(GL_DEPTH_BUFFER_BIT);
-        mDepthWriteShader.uniform("modelview_mat", (*currSpotLight)->mShadowCam.getModelViewMatrix());
-        drawModels( SHADER_TYPE_DEPTH, &mDepthWriteShader, true );
-        mDepthWriteShader.unbind();
+        DeferredResources::getSingleton().SHADER_DEPTH_WRITE.uniform("modelview_mat", (*currSpotLight)->mShadowCam.getModelViewMatrix());
+        drawModels( SHADER_TYPE_DEPTH, &DeferredResources::getSingleton().SHADER_DEPTH_WRITE, true );
+        DeferredResources::getSingleton().SHADER_DEPTH_WRITE.unbind();
     }
     
     glDisable(GL_CULL_FACE);
@@ -207,18 +210,18 @@ void DeferredRenderer::renderShadowsToFBOs()
         glCullFace(GL_BACK); //don't need what we won't see
         //gl::setMatrices( *mCam );
         
-        mPointShadowShader.bind();
+        DeferredResources::getSingleton().SHADER_POINT_SHADOWS.bind();
         (*currPointLight)->mShadowMap.bind(0); //the magic texture
-        mPointShadowShader.uniform( "shadow", 0);
-        //mPointShadowShader.uniform( "modelview_mat", mCam->getModelViewMatrix() );
-        mPointShadowShader.uniform( "projection_mat", mCam->getProjectionMatrix() );
-        mPointShadowShader.uniform( "light_pos", mCam->getModelViewMatrix().transformPointAffine( (*currPointLight)->mShadowCam.getEyePoint() )); //conversion from world-space to camera-space (required here)
-        mPointShadowShader.uniform( "camera_modelview_mat_inv", mCam->getInverseModelViewMatrix()); //!! need to account for model_mat ...
-        mPointShadowShader.uniform( "light_modelview_mat", (*currPointLight)->mShadowCam.getModelViewMatrix());
-        mPointShadowShader.uniform( "light_projection_mat", (*currPointLight)->mShadowCam.getProjectionMatrix());
-        drawScene( SHADER_TYPE_SHADOW, &mPointShadowShader );
+        DeferredResources::getSingleton().SHADER_POINT_SHADOWS.uniform( "shadow", 0);
+        //SHADER_POINT_SHADOWS.uniform( "modelview_mat", mCam->getModelViewMatrix() );
+        DeferredResources::getSingleton().SHADER_POINT_SHADOWS.uniform( "projection_mat", mCam->getProjectionMatrix() );
+        DeferredResources::getSingleton().SHADER_POINT_SHADOWS.uniform( "light_pos", mCam->getModelViewMatrix().transformPointAffine( (*currPointLight)->mShadowCam.getEyePoint() )); //conversion from world-space to camera-space (required here)
+        DeferredResources::getSingleton().SHADER_POINT_SHADOWS.uniform( "camera_modelview_mat_inv", mCam->getInverseModelViewMatrix()); //!! need to account for model_mat ...
+        DeferredResources::getSingleton().SHADER_POINT_SHADOWS.uniform( "light_modelview_mat", (*currPointLight)->mShadowCam.getModelViewMatrix());
+        DeferredResources::getSingleton().SHADER_POINT_SHADOWS.uniform( "light_projection_mat", (*currPointLight)->mShadowCam.getProjectionMatrix());
+        drawScene( SHADER_TYPE_SHADOW, &DeferredResources::getSingleton().SHADER_POINT_SHADOWS );
         (*currPointLight)->mShadowMap.unbind();
-        mPointShadowShader.unbind();
+        DeferredResources::getSingleton().SHADER_POINT_SHADOWS.unbind();
         
         (*currPointLight)->mShadowsFbo.unbindFramebuffer();
     }
@@ -242,12 +245,12 @@ void DeferredRenderer::renderShadowsToFBOs()
         shadowTransMatrix *= mCam->getInverseModelViewMatrix();
 
         (*currSpotLight)->mDepthFBO.bindDepthTexture(0);
-        mSpotShadowShader.bind();
-        mSpotShadowShader.uniform( "depthTexture", 0 );
-        mSpotShadowShader.uniform( "shadowTransMatrix", shadowTransMatrix );
-        mSpotShadowShader.uniform( "projection_mat", mCam->getProjectionMatrix() );
-        drawScene( SHADER_TYPE_SHADOW, &mSpotShadowShader );
-        mSpotShadowShader.unbind();
+        DeferredResources::getSingleton().SHADER_SPOT_SHADOWS.bind();
+        DeferredResources::getSingleton().SHADER_SPOT_SHADOWS.uniform( "depthTexture", 0 );
+        DeferredResources::getSingleton().SHADER_SPOT_SHADOWS.uniform( "shadowTransMatrix", shadowTransMatrix );
+        DeferredResources::getSingleton().SHADER_SPOT_SHADOWS.uniform( "projection_mat", mCam->getProjectionMatrix() );
+        drawScene( SHADER_TYPE_SHADOW, &DeferredResources::getSingleton().SHADER_SPOT_SHADOWS );
+        DeferredResources::getSingleton().SHADER_SPOT_SHADOWS.unbind();
         (*currSpotLight)->mDepthFBO.unbindTexture();
         (*currSpotLight)->mShadowsFbo.unbindFramebuffer();
     }
@@ -298,30 +301,30 @@ void DeferredRenderer::renderDeferredFBO()
     glClearDepth(1.0f);
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     
-    mDeferredShader.bind();
-    mDeferredShader.uniform("projectionMatrix", mCam->getProjectionMatrix());
-    mDeferredShader.uniform("diffuse", Vec3f(1.0f, 1.0f, 1.0f));
-    mDeferredShader.uniform("specular", Vec3f(1.0f, 1.0f, 1.0f));
-    mDeferredShader.uniform("emissive", Vec3f(1.0f, 1.0f, 1.0f));
-    mDeferredShader.uniform("shininess", 10.0f);
-    mDeferredShader.uniform("additiveSpecular", 10.0f);
+    DeferredResources::getSingleton().SHADER_DEFERRED.bind();
+    DeferredResources::getSingleton().SHADER_DEFERRED.uniform("projectionMatrix", mCam->getProjectionMatrix());
+    DeferredResources::getSingleton().SHADER_DEFERRED.uniform("diffuse", Vec3f(1.0f, 1.0f, 1.0f));
+    DeferredResources::getSingleton().SHADER_DEFERRED.uniform("specular", Vec3f(1.0f, 1.0f, 1.0f));
+    DeferredResources::getSingleton().SHADER_DEFERRED.uniform("emissive", Vec3f(1.0f, 1.0f, 1.0f));
+    DeferredResources::getSingleton().SHADER_DEFERRED.uniform("shininess", 10.0f);
+    DeferredResources::getSingleton().SHADER_DEFERRED.uniform("additiveSpecular", 10.0f);
     
     Matrix33f normalMatrix = mCam->getModelViewMatrix().subMatrix33(0, 0);
     normalMatrix.invert();
     normalMatrix.transpose();
-    mDeferredShader.uniform("normalMatrix", normalMatrix ); //getInverse( object modelMatrix ).transpose()
+    DeferredResources::getSingleton().SHADER_DEFERRED.uniform("normalMatrix", normalMatrix ); //getInverse( object modelMatrix ).transpose()
     
     //render light meshes if visible
-    drawLightPointMeshes( SHADER_TYPE_DEFERRED, &mDeferredShader );
-    drawLightSpotMeshes( SHADER_TYPE_DEFERRED, &mDeferredShader );
+    drawLightPointMeshes( SHADER_TYPE_DEFERRED, &DeferredResources::getSingleton().SHADER_DEFERRED );
+    drawLightSpotMeshes( SHADER_TYPE_DEFERRED, &DeferredResources::getSingleton().SHADER_DEFERRED );
     
-    mDeferredShader.uniform("modelViewMatrix", mCam->getModelViewMatrix());
+    DeferredResources::getSingleton().SHADER_DEFERRED.uniform("modelViewMatrix", mCam->getModelViewMatrix());
     
     //now draw models ... TODO: might want to combine into one function/loop call
-    drawModels( SHADER_TYPE_DEFERRED, &mDeferredShader, true);
-    drawModels( SHADER_TYPE_DEFERRED, &mDeferredShader, false);
+    drawModels( SHADER_TYPE_DEFERRED, &DeferredResources::getSingleton().SHADER_DEFERRED, true);
+    drawModels( SHADER_TYPE_DEFERRED, &DeferredResources::getSingleton().SHADER_DEFERRED, false);
     
-    mDeferredShader.unbind();
+    DeferredResources::getSingleton().SHADER_DEFERRED.unbind();
     mDeferredFBO.unbindFramebuffer();
 }
 
@@ -338,13 +341,11 @@ void DeferredRenderer::renderSSAOToFBO()
     
     mRandomNoise.bind(0);
     mDeferredFBO.getTexture(1).bind(1);
-    mSSAOShader.bind();
-    mSSAOShader.uniform("rnm", 0 );
-    mSSAOShader.uniform("normalMap", 1 );
-    
+    DeferredResources::getSingleton().SHADER_SSAO.bind();
+    DeferredResources::getSingleton().SHADER_SSAO.uniform("rnm", 0 );
+    DeferredResources::getSingleton().SHADER_SSAO.uniform("normalMap", 1 );
     gl::drawSolidRect( Rectf( 0.0f, 0.0f, (float)mSSAOMap.getWidth(), (float)mSSAOMap.getHeight()) );
-    
-    mSSAOShader.unbind();
+    DeferredResources::getSingleton().SHADER_SSAO.unbind();
     
     mDeferredFBO.getTexture(1).unbind(1);
     mRandomNoise.unbind(0);
@@ -375,11 +376,11 @@ void DeferredRenderer::pingPongBlurSSAO()
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     
     mSSAOMap.getTexture().bind(0);
-    mHBlurShader.bind();
-    mHBlurShader.uniform("RTScene", 0);
-    mHBlurShader.uniform("blurStep", 1.0f/mPingPongBlurH.getWidth()); //so that every "blur step" will equal one pixel width of this FBO
+    DeferredResources::getSingleton().SHADER_BLUR_X.bind();
+    DeferredResources::getSingleton().SHADER_BLUR_X.uniform("RTScene", 0);
+    DeferredResources::getSingleton().SHADER_BLUR_X.uniform("blurStep", 1.0f/mPingPongBlurH.getWidth()); //so that every "blur step" will equal one pixel width of this FBO
     gl::drawSolidRect( Rectf( 0.0f, 0.0f, (float)mPingPongBlurH.getWidth(), (float)mPingPongBlurH.getHeight()) );
-    mHBlurShader.unbind();
+    DeferredResources::getSingleton().SHADER_BLUR_X.unbind();
     mSSAOMap.getTexture().unbind(0);
     mPingPongBlurH.unbindFramebuffer();
     
@@ -392,11 +393,11 @@ void DeferredRenderer::pingPongBlurSSAO()
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     
     mPingPongBlurH.getTexture().bind(0);
-    mHBlurShader.bind();
-    mHBlurShader.uniform("RTBlurH", 0);
-    mHBlurShader.uniform("blurStep", 1.0f/mPingPongBlurH.getHeight()); //so that every "blur step" will equal one pixel height of this FBO
+    DeferredResources::getSingleton().SHADER_BLUR_X.bind();
+    DeferredResources::getSingleton().SHADER_BLUR_X.uniform("RTBlurH", 0);
+    DeferredResources::getSingleton().SHADER_BLUR_X.uniform("blurStep", 1.0f/mPingPongBlurH.getHeight()); //so that every "blur step" will equal one pixel height of this FBO
     gl::drawSolidRect( Rectf( 0.0f, 0.0f, (float)mPingPongBlurH.getWidth(), (float)mPingPongBlurH.getHeight()) );
-    mHBlurShader.unbind();
+    DeferredResources::getSingleton().SHADER_BLUR_X.unbind();
     mPingPongBlurH.getTexture().unbind(0);
     mPingPongBlurV.unbindFramebuffer();
 }
@@ -488,15 +489,15 @@ void DeferredRenderer::renderQuad( const int renderType, Rectf renderQuad, const
                 mAllShadowsFBO.getTexture().bind(1);
             }
             mLightGlowFBO.getTexture().bind(2);
-            mBasicBlender.bind();
-            mBasicBlender.uniform("ssaoTex", 0 );
-            mBasicBlender.uniform("shadowsTex", 1 );
-            mBasicBlender.uniform("baseTex", 2 );
-            mBasicBlender.uniform("useSSAO", (mDeferFlags & SSAO_ENABLED_FLAG) );
-            mBasicBlender.uniform("useShadows", (mDeferFlags & SHADOWS_ENABLED_FLAG) );
-            mBasicBlender.uniform("onlySSAO", false );
+            DeferredResources::getSingleton().SHADER_BLENDER.bind();
+            DeferredResources::getSingleton().SHADER_BLENDER.uniform("ssaoTex", 0 );
+            DeferredResources::getSingleton().SHADER_BLENDER.uniform("shadowsTex", 1 );
+            DeferredResources::getSingleton().SHADER_BLENDER.uniform("baseTex", 2 );
+            DeferredResources::getSingleton().SHADER_BLENDER.uniform("useSSAO", (mDeferFlags & SSAO_ENABLED_FLAG) );
+            DeferredResources::getSingleton().SHADER_BLENDER.uniform("useShadows", (mDeferFlags & SHADOWS_ENABLED_FLAG) );
+            DeferredResources::getSingleton().SHADER_BLENDER.uniform("onlySSAO", false );
             gl::drawSolidRect( Rectf( 0.0f, (float)mFinalSSFBO.getHeight(), (float)mFinalSSFBO.getWidth(), 0.0f) );
-            mBasicBlender.unbind();
+            DeferredResources::getSingleton().SHADER_BLENDER.unbind();
             mLightGlowFBO.getTexture().unbind(2);
             if( mDeferFlags & SHADOWS_ENABLED_FLAG ) {
                 mAllShadowsFBO.getTexture().unbind(1);
@@ -532,13 +533,13 @@ void DeferredRenderer::renderQuad( const int renderType, Rectf renderQuad, const
             mFinalSSFBO.getTexture().bind(0);
             
             if( (mDeferFlags & FXAA_ENABLED_FLAG) && !(mDeferFlags & (MSAA_4X_ENABLED_FLAG | MSAA_8X_ENABLED_FLAG | MSAA_16X_ENABLED_FLAG)) ) {
-                mFXAAShader.bind();
-                mFXAAShader.uniform("buf0", 0);
-                mFXAAShader.uniform("frameBufSize", Vec2f((float)mFinalSSFBO.getWidth(), (float)mFinalSSFBO.getHeight()));
+                DeferredResources::getSingleton().SHADER_FXAA.bind();
+                DeferredResources::getSingleton().SHADER_FXAA.uniform("buf0", 0);
+                DeferredResources::getSingleton().SHADER_FXAA.uniform("frameBufSize", Vec2f((float)mFinalSSFBO.getWidth(), (float)mFinalSSFBO.getHeight()));
             }
             gl::drawSolidRect( renderQuad );
             if( (mDeferFlags & FXAA_ENABLED_FLAG) && !(mDeferFlags & (MSAA_4X_ENABLED_FLAG | MSAA_8X_ENABLED_FLAG | MSAA_16X_ENABLED_FLAG)) ) {
-                mFXAAShader.unbind();
+                DeferredResources::getSingleton().SHADER_FXAA.unbind();
             }
             mFinalSSFBO.getTexture().unbind(0);
         }
@@ -555,10 +556,10 @@ void DeferredRenderer::renderQuad( const int renderType, Rectf renderQuad, const
             gl::setViewport( getWindowBounds() );
             gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
             mDeferredFBO.getTexture(1).bind(0);
-            mAlphaToRBG.bind();
-            mAlphaToRBG.uniform("alphaTex", 0);
+            DeferredResources::getSingleton().SHADER_ALPHA_TO_RBG.bind();
+            DeferredResources::getSingleton().SHADER_ALPHA_TO_RBG.uniform("alphaTex", 0);
             gl::drawSolidRect( renderQuad );
-            mAlphaToRBG.unbind();
+            DeferredResources::getSingleton().SHADER_ALPHA_TO_RBG.unbind();
             mDeferredFBO.getTexture(1).unbind(0);
         }
             break;
@@ -575,15 +576,15 @@ void DeferredRenderer::renderQuad( const int renderType, Rectf renderQuad, const
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
                 mSSAOMap.getTexture().bind(0);
-                mBasicBlender.bind();
-                mBasicBlender.uniform("ssaoTex", 0 );
-                mBasicBlender.uniform("shadowsTex", 0 );    //just binding same one so only it shows....
-                mBasicBlender.uniform("baseTex", 0 );       //just binding same one so only it shows....
-                mBasicBlender.uniform("useSSAO", true );
-                mBasicBlender.uniform("useShadows", false );
-                mBasicBlender.uniform("onlySSAO", true );
+                DeferredResources::getSingleton().SHADER_BLENDER.bind();
+                DeferredResources::getSingleton().SHADER_BLENDER.uniform("ssaoTex", 0 );
+                DeferredResources::getSingleton().SHADER_BLENDER.uniform("shadowsTex", 0 );    //just binding same one so only it shows....
+                DeferredResources::getSingleton().SHADER_BLENDER.uniform("baseTex", 0 );       //just binding same one so only it shows....
+                DeferredResources::getSingleton().SHADER_BLENDER.uniform("useSSAO", true );
+                DeferredResources::getSingleton().SHADER_BLENDER.uniform("useShadows", false );
+                DeferredResources::getSingleton().SHADER_BLENDER.uniform("onlySSAO", true );
                 gl::drawSolidRect( renderQuad );
-                mBasicBlender.unbind();
+                DeferredResources::getSingleton().SHADER_BLENDER.unbind();
                 mSSAOMap.getTexture().unbind(0);
             }
         }
@@ -673,7 +674,7 @@ void DeferredRenderer::drawLightSpotMeshes( int shaderType, gl::GlslProg* shader
                     shader->uniform("light_intensity", (*currLight)->getIntensity());
                     shader->uniform("light_pos_vs", mCam->getModelViewMatrix().transformPoint( (*currLight)->getPos() ));
                     shader->uniform("light_dir_vs", lightDir.normalized() );
-                    gl::draw( mFSQuadVBOMesh );
+                    gl::draw( DeferredResources::getSingleton().VBO_FULLSCREEN_QUAD );
                 }
                     break;
                 case SHADER_TYPE_SHADOW: {
@@ -710,24 +711,24 @@ void DeferredRenderer::renderLights()
     mDeferredFBO.getTexture(0).bind(0); //bind color tex
     mDeferredFBO.getTexture(1).bind(1); //bind normal/depth tex
     
-    mLightPointShader.bind(); //bind point light pixel shader
-    mLightPointShader.uniform("projection_mat", mCam->getProjectionMatrix());
-    mLightPointShader.uniform("sampler_col", 0);
-    mLightPointShader.uniform("sampler_normal_depth", 1);
-    mLightPointShader.uniform("proj_inv_mat", mCam->getProjectionMatrix().inverted());
-    mLightPointShader.uniform("view_height", mDeferredFBO.getHeight());
-    mLightPointShader.uniform("view_width", mDeferredFBO.getWidth());
-    drawLightPointMeshes( SHADER_TYPE_LIGHT, &mLightPointShader );
-    mLightPointShader.unbind(); //unbind and reset everything to desired values
+    DeferredResources::getSingleton().SHADER_LIGHT_POINT.bind(); //bind point light pixel shader
+    DeferredResources::getSingleton().SHADER_LIGHT_POINT.uniform("projection_mat", mCam->getProjectionMatrix());
+    DeferredResources::getSingleton().SHADER_LIGHT_POINT.uniform("sampler_col", 0);
+    DeferredResources::getSingleton().SHADER_LIGHT_POINT.uniform("sampler_normal_depth", 1);
+    DeferredResources::getSingleton().SHADER_LIGHT_POINT.uniform("proj_inv_mat", mCam->getProjectionMatrix().inverted());
+    DeferredResources::getSingleton().SHADER_LIGHT_POINT.uniform("view_height", mDeferredFBO.getHeight());
+    DeferredResources::getSingleton().SHADER_LIGHT_POINT.uniform("view_width", mDeferredFBO.getWidth());
+    drawLightPointMeshes( SHADER_TYPE_LIGHT, &DeferredResources::getSingleton().SHADER_LIGHT_POINT );
+    DeferredResources::getSingleton().SHADER_LIGHT_POINT.unbind(); //unbind and reset everything to desired values
     
-    mLightSpotShader.bind(); //bind point light pixel shader
-    mLightSpotShader.uniform("sampler_col", 0);
-    mLightSpotShader.uniform("sampler_normal_depth", 1);
-    mLightSpotShader.uniform("proj_inv_mat", mCam->getProjectionMatrix().inverted());
-    mLightSpotShader.uniform("view_height", (float)mDeferredFBO.getHeight());
-    mLightSpotShader.uniform("view_width", (float)mDeferredFBO.getWidth());
-    drawLightSpotMeshes( SHADER_TYPE_LIGHT, &mLightSpotShader );
-    mLightSpotShader.unbind(); //unbind and reset everything to desired values
+    DeferredResources::getSingleton().SHADER_LIGHT_SPOT.bind(); //bind point light pixel shader
+    DeferredResources::getSingleton().SHADER_LIGHT_SPOT.uniform("sampler_col", 0);
+    DeferredResources::getSingleton().SHADER_LIGHT_SPOT.uniform("sampler_normal_depth", 1);
+    DeferredResources::getSingleton().SHADER_LIGHT_SPOT.uniform("proj_inv_mat", mCam->getProjectionMatrix().inverted());
+    DeferredResources::getSingleton().SHADER_LIGHT_SPOT.uniform("view_height", (float)mDeferredFBO.getHeight());
+    DeferredResources::getSingleton().SHADER_LIGHT_SPOT.uniform("view_width", (float)mDeferredFBO.getWidth());
+    drawLightSpotMeshes( SHADER_TYPE_LIGHT, &DeferredResources::getSingleton().SHADER_LIGHT_SPOT );
+    DeferredResources::getSingleton().SHADER_LIGHT_SPOT.unbind(); //unbind and reset everything to desired values
     
     mDeferredFBO.getTexture(0).unbind(0); //bind color tex
     mDeferredFBO.getTexture(1).unbind(1); //bind normal/depth tex
@@ -741,31 +742,6 @@ void DeferredRenderer::renderLights()
 void DeferredRenderer::initTextures()
 {
     mRandomNoise = gl::Texture( loadImage( loadResource( RES_TEX_NOISE_SAMPLER ) ) ); //noise texture required for SSAO calculations
-}
-
-void DeferredRenderer::initShaders()
-{
-    mDeferredShader     = gl::GlslProg( loadResource( RES_GLSL_DEFER_VERT ), loadResource( RES_GLSL_DEFER_FRAG ) );
-    mBasicBlender       = gl::GlslProg( loadResource( RES_GLSL_BASIC_BLENDER_VERT ), loadResource( RES_GLSL_BASIC_BLENDER_FRAG ) );
-    
-    if(mDeferFlags & SSAO_ENABLED_FLAG) {
-        mSSAOShader		= gl::GlslProg( loadResource( RES_GLSL_SSAO_VERT ), loadResource( RES_GLSL_SSAO_FRAG ) );
-    }
-    mHBlurShader		= gl::GlslProg( loadResource( RES_GLSL_BLUR_H_VERT ), loadResource( RES_GLSL_BLUR_H_FRAG ) );
-    mVBlurShader		= gl::GlslProg( loadResource( RES_GLSL_BLUR_V_VERT ), loadResource( RES_GLSL_BLUR_V_FRAG ) );
-    
-    mLightPointShader	= gl::GlslProg( loadResource( RES_GLSL_LIGHT_POINT_VERT ), loadResource( RES_GLSL_LIGHT_POINT_FRAG ) );
-    mLightSpotShader	= gl::GlslProg( loadResource( RES_GLSL_LIGHT_SPOT_VERT ), loadResource( RES_GLSL_LIGHT_SPOT_FRAG ) );
-    mAlphaToRBG         = gl::GlslProg( loadResource( RES_GLSL_ALPHA_RGB_VERT ), loadResource( RES_GLSL_ALPHA_RGB_FRAG ) );
-    
-    mPointShadowShader  = gl::GlslProg( loadResource( RES_GLSL_POINTSHADOW_VERT ), loadResource( RES_GLSL_POINTSHADOW_FRAG ) );
-    mSpotShadowShader   = gl::GlslProg( loadResource( RES_GLSL_SPOTSHADOW_VERT ), loadResource( RES_GLSL_SPOTSHADOW_FRAG ) );
-    mDepthWriteShader   = gl::GlslProg( loadResource( RES_GLSL_DEPTHWRITE_VERT ), loadResource( RES_GLSL_DEPTHWRITE_FRAG ) );
-    mBasicShader        = gl::GlslProg( loadResource( RES_GLSL_BASIC_VERT ), loadResource( RES_GLSL_BASIC_FRAG ) );
-    
-    if( (mDeferFlags & FXAA_ENABLED_FLAG) && !(mDeferFlags & (MSAA_4X_ENABLED_FLAG | MSAA_8X_ENABLED_FLAG | MSAA_16X_ENABLED_FLAG)) ) {
-        mFXAAShader		= gl::GlslProg( loadResource( RES_GLSL_FXAA_VERT ), loadResource( RES_GLSL_FXAA_FRAG ) );
-    }
 }
 
 void DeferredRenderer::initFBOs()
@@ -837,11 +813,11 @@ void DeferredRenderer::drawModels(int shaderType, gl::GlslProg* shader, BOOL dra
                     
                     if( (*model)->getDiffuseTex() ) {
                         (*model)->getDiffuseTex()->bind(0);
-                        mDeferredShader.uniform("useDiffuseTex", 1.0f);
-                        mDeferredShader.uniform("texDiffuse", 0);
+                        DeferredResources::getSingleton().SHADER_DEFERRED.uniform("useDiffuseTex", 1.0f);
+                        DeferredResources::getSingleton().SHADER_DEFERRED.uniform("texDiffuse", 0);
                     }
                     else {
-                        mDeferredShader.uniform("useDiffuseTex", 0.0f);
+                        DeferredResources::getSingleton().SHADER_DEFERRED.uniform("useDiffuseTex", 0.0f);
                     }
                     
                     shader->uniform("diffuse", (*model)->material.diffuseCol );

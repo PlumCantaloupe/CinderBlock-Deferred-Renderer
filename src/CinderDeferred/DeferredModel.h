@@ -51,7 +51,7 @@ class DeferredModel
         normalTex = NULL;
     }
     
-    void setup( gl::VboMesh VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster = true, const Matrix44f modelMatrix = Matrix44f::identity() )
+    virtual void setup( gl::VboMesh VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster = true, const Matrix44f modelMatrix = Matrix44f::identity() )
     {
         mVBOMeshRef = VBOMeshRef;
         material = mat;
@@ -98,28 +98,28 @@ class DeferredModel
         return Vec3f();
     }
     
-    void render()
+    virtual void render()
     {
         gl::draw( mVBOMeshRef );
     }
     
-    void setDiffuseTex( gl::Texture *tex ) {diffuseTex = tex;}
-    gl::Texture *getDiffuseTex() {return diffuseTex;}
+    virtual void setDiffuseTex( gl::Texture *tex ) {diffuseTex = tex;}
+    virtual gl::Texture *getDiffuseTex() {return diffuseTex;}
     
-    void setSpecularTex( gl::Texture *tex ) {specularTex = tex;}
-    gl::Texture *getSpecularTex() {return specularTex;}
+    virtual void setSpecularTex( gl::Texture *tex ) {specularTex = tex;}
+    virtual gl::Texture *getSpecularTex() {return specularTex;}
     
-    void setEmmissiveTex( gl::Texture *tex ) {emissiveTex = tex;}
-    gl::Texture *getEmissiveTex() {return emissiveTex;}
+    virtual void setEmmissiveTex( gl::Texture *tex ) {emissiveTex = tex;}
+    virtual gl::Texture *getEmissiveTex() {return emissiveTex;}
     
-    void setShininessTex( gl::Texture *tex ) {shininessTex = tex;}
-    gl::Texture *getShininessTex() {return shininessTex;}
+    virtual void setShininessTex( gl::Texture *tex ) {shininessTex = tex;}
+    virtual gl::Texture *getShininessTex() {return shininessTex;}
     
-    void setAdditiveSpecularTex( gl::Texture *tex ) {additiveSpecularTex = tex;}
-    gl::Texture *getAdditiveSpecularTex() {return additiveSpecularTex;}
+    virtual void setAdditiveSpecularTex( gl::Texture *tex ) {additiveSpecularTex = tex;}
+    virtual gl::Texture *getAdditiveSpecularTex() {return additiveSpecularTex;}
     
-    void setNormalTex( gl::Texture *tex ) {normalTex = tex;}
-    gl::Texture *getNormalTex() {return normalTex;}
+    virtual void setNormalTex( gl::Texture *tex ) {normalTex = tex;}
+    virtual gl::Texture *getNormalTex() {return normalTex;}
     
     /*
      uniform vec3 diffuse;

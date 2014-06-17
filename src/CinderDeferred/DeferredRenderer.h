@@ -35,6 +35,63 @@ using namespace ci;
 using namespace ci::app;
 using namespace std;
 
+class DeferredResources {
+    public:
+    //static shaders so they can be used anywhere
+    gl::GlslProg		SHADER_SSAO;
+    gl::GlslProg		SHADER_DEFERRED;
+    gl::GlslProg		SHADER_BLENDER;
+    gl::GlslProg		SHADER_BLUR_X;
+    gl::GlslProg		SHADER_BLUR_Y;
+    gl::GlslProg		SHADER_LIGHT_POINT;
+    gl::GlslProg		SHADER_LIGHT_SPOT;
+    gl::GlslProg		SHADER_ALPHA_TO_RBG;
+    gl::GlslProg		SHADER_FXAA;
+    gl::GlslProg		SHADER_DEPTH_WRITE;
+    gl::GlslProg		SHADER_BASIC_TEXTURE;
+    gl::GlslProg		SHADER_POINT_SHADOWS;
+    gl::GlslProg		SHADER_SPOT_SHADOWS;
+
+    gl::VboMesh         VBO_FULLSCREEN_QUAD;
+
+    DeferredResources()
+    {
+        initStatics();
+    }
+    
+    static DeferredResources& getSingleton()
+    {
+        static DeferredResources instance;
+        return instance;
+    }
+    
+    void initStatics()
+    {
+        //shaders
+        SHADER_DEFERRED         = gl::GlslProg( loadResource( RES_GLSL_DEFER_VERT ), loadResource( RES_GLSL_DEFER_FRAG ) );
+        SHADER_BLENDER          = gl::GlslProg( loadResource( RES_GLSL_BASIC_BLENDER_VERT ), loadResource( RES_GLSL_BASIC_BLENDER_FRAG ) );
+        
+        SHADER_SSAO             = gl::GlslProg( loadResource( RES_GLSL_SSAO_VERT ), loadResource( RES_GLSL_SSAO_FRAG ) );
+        
+        SHADER_BLUR_X           = gl::GlslProg( loadResource( RES_GLSL_BLUR_H_VERT ), loadResource( RES_GLSL_BLUR_H_FRAG ) );
+        SHADER_BLUR_Y           = gl::GlslProg( loadResource( RES_GLSL_BLUR_V_VERT ), loadResource( RES_GLSL_BLUR_V_FRAG ) );
+        
+        SHADER_LIGHT_POINT      = gl::GlslProg( loadResource( RES_GLSL_LIGHT_POINT_VERT ), loadResource( RES_GLSL_LIGHT_POINT_FRAG ) );
+        SHADER_LIGHT_SPOT       = gl::GlslProg( loadResource( RES_GLSL_LIGHT_SPOT_VERT ), loadResource( RES_GLSL_LIGHT_SPOT_FRAG ) );
+        SHADER_ALPHA_TO_RBG     = gl::GlslProg( loadResource( RES_GLSL_ALPHA_RGB_VERT ), loadResource( RES_GLSL_ALPHA_RGB_FRAG ) );
+        
+        SHADER_POINT_SHADOWS    = gl::GlslProg( loadResource( RES_GLSL_POINTSHADOW_VERT ), loadResource( RES_GLSL_POINTSHADOW_FRAG ) );
+        SHADER_SPOT_SHADOWS     = gl::GlslProg( loadResource( RES_GLSL_SPOTSHADOW_VERT ), loadResource( RES_GLSL_SPOTSHADOW_FRAG ) );
+        SHADER_DEPTH_WRITE      = gl::GlslProg( loadResource( RES_GLSL_DEPTHWRITE_VERT ), loadResource( RES_GLSL_DEPTHWRITE_FRAG ) );
+        SHADER_BASIC_TEXTURE    = gl::GlslProg( loadResource( RES_GLSL_BASIC_VERT ), loadResource( RES_GLSL_BASIC_FRAG ) );
+        
+        SHADER_FXAA             = gl::GlslProg( loadResource( RES_GLSL_FXAA_VERT ), loadResource( RES_GLSL_FXAA_FRAG ) );
+        
+        //mesh
+        VBO_FULLSCREEN_QUAD     = DeferredModel::getFullScreenVboMesh();
+    };
+};
+
 class DeferredRenderer
 {
 public:
@@ -50,8 +107,6 @@ public:
         FBO_PARTICLES
     };
     
-    //boost::function<void(int, gl::GlslProg*)> fRenderShadowCastersFunc;
-    //boost::function<void(int, gl::GlslProg*)> fRenderNotShadowCastersFunc;
     boost::function<void()> fRenderOverlayFunc;
     boost::function<void()> fRenderParticlesFunc;
     Camera              *mCam;
@@ -71,21 +126,6 @@ public:
     gl::Fbo				mOverlayFBO;
     gl::Fbo				mParticlesFBO;
     
-	gl::GlslProg		mPointShadowShader;
-    gl::GlslProg		mSpotShadowShader;
-	
-    gl::GlslProg		mSSAOShader;
-    gl::GlslProg		mDeferredShader;
-    gl::GlslProg		mBasicBlender;
-    gl::GlslProg		mHBlurShader;
-    gl::GlslProg		mVBlurShader;
-    gl::GlslProg		mLightPointShader;
-    gl::GlslProg		mLightSpotShader;
-    gl::GlslProg		mAlphaToRBG;
-	gl::GlslProg		mFXAAShader;
-    gl::GlslProg		mDepthWriteShader;
-    gl::GlslProg		mBasicShader;
-    
     vector<Light_Point*>    mPointLights;
     vector<Light_Spot*>     mSpotLights;
     
@@ -97,7 +137,6 @@ public:
     gl::VboMesh         mCubeVBOMesh;    //pass cube Vbo to all point lights to save on draw calls
     gl::VboMesh         mConeVBOMesh;    //pass cube Vbo to all spot lights to save on draw calls
     gl::VboMesh         mSphereVBOMesh;
-    gl::VboMesh         mFSQuadVBOMesh;
     
     enum
     {
@@ -150,6 +189,7 @@ public:
     Light_Point* addPointLight(const Vec3f position, const Color color, const float intensity, const bool castsShadows, const bool visible = false);
     Light_Spot* addSpotLight(const Vec3f position, const Vec3f target, const Color color, const float intensity, const float lightAngle, const bool castsShadows, const bool visible);
     DeferredModel* addModel( gl::VboMesh& VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster, const Matrix44f modelMatrix = Matrix44f::identity() );
+    void addModel( DeferredModel *model );
     
     //todo .. add remove functionality (using procedurally unique ids)
     
@@ -167,7 +207,6 @@ public:
     void drawScene( int shaderType, gl::GlslProg *shader );
     void renderLights();
     void initTextures();
-    void initShaders();
     void initFBOs();
     
     void drawModels(int shaderType, gl::GlslProg* shader, BOOL drawShadowCasters);
