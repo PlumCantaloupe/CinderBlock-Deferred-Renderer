@@ -835,8 +835,8 @@ void DeferredRenderer::drawModels(int shaderType, gl::GlslProg* shader, BOOL dra
                         continue;
                     }
                     
-                    if( (*model)->diffuseTex ) {
-                        (*model)->diffuseTex->bind(0);
+                    if( (*model)->getDiffuseTex() ) {
+                        (*model)->getDiffuseTex()->bind(0);
                         mDeferredShader.uniform("useDiffuseTex", 1.0f);
                         mDeferredShader.uniform("texDiffuse", 0);
                     }
@@ -852,8 +852,8 @@ void DeferredRenderer::drawModels(int shaderType, gl::GlslProg* shader, BOOL dra
                     shader->uniform("modelViewMatrix", mCam->getModelViewMatrix() * (*model)->getModelMatrix());
                     (*model)->render();
                     
-                    if( (*model)->diffuseTex ) {
-                        (*model)->diffuseTex->unbind(0);
+                    if( (*model)->getDiffuseTex() ) {
+                        (*model)->getDiffuseTex()->unbind(0);
                     }
                 }
             }

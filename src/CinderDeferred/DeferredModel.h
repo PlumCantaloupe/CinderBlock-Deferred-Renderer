@@ -32,6 +32,7 @@ class DeferredModel
     Matrix44f   mModelMatrix;   //in trying to be forward thinking we will think in terms of matrices not pos, scale, rotation. Use glMultMatrixf( mModelMatrix ) if you must use immediate mode
     
     //these textures are optional but if set will overwrite any corresponding material options
+    protected:
     gl::Texture *diffuseTex;
     gl::Texture *specularTex;
     gl::Texture *emissiveTex;
@@ -101,6 +102,24 @@ class DeferredModel
     {
         gl::draw( mVBOMeshRef );
     }
+    
+    void setDiffuseTex( gl::Texture *tex ) {diffuseTex = tex;}
+    gl::Texture *getDiffuseTex() {return diffuseTex;}
+    
+    void setSpecularTex( gl::Texture *tex ) {specularTex = tex;}
+    gl::Texture *getSpecularTex() {return specularTex;}
+    
+    void setEmmissiveTex( gl::Texture *tex ) {emissiveTex = tex;}
+    gl::Texture *getEmissiveTex() {return emissiveTex;}
+    
+    void setShininessTex( gl::Texture *tex ) {shininessTex = tex;}
+    gl::Texture *getShininessTex() {return shininessTex;}
+    
+    void setAdditiveSpecularTex( gl::Texture *tex ) {additiveSpecularTex = tex;}
+    gl::Texture *getAdditiveSpecularTex() {return additiveSpecularTex;}
+    
+    void setNormalTex( gl::Texture *tex ) {normalTex = tex;}
+    gl::Texture *getNormalTex() {return normalTex;}
     
     /*
      uniform vec3 diffuse;
