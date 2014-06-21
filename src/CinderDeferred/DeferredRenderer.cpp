@@ -297,7 +297,7 @@ void DeferredRenderer::renderDeferredFBO()
     mDeferredFBO.bindFramebuffer();
     gl::setViewport( mDeferredFBO.getBounds() );
     
-    glClearColor( 0.5f, 0.5f, 0.5f, 1 );
+    glClearColor( 0.0f, 0.0f, 0.0f, 1 );
     glClearDepth(1.0f);
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     
@@ -547,9 +547,12 @@ void DeferredRenderer::renderQuad( const int renderType, Rectf renderQuad, const
         case SHOW_DIFFUSE_VIEW: {
             gl::setViewport( getWindowBounds() );
             gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
-            mDeferredFBO.getTexture(0).bind(0);
+            mDeferredFBO.getTexture(2).bind(0);
+            DeferredResources::getSingleton().SHADER_DIFFUSE.bind();
+            DeferredResources::getSingleton().SHADER_DIFFUSE.uniform("sampler_col", 0);
             gl::drawSolidRect( renderQuad );
-            mDeferredFBO.getTexture(0).unbind(0);
+            DeferredResources::getSingleton().SHADER_DIFFUSE.unbind();
+            mDeferredFBO.getTexture(2).unbind(0);
         }
             break;
         case SHOW_DEPTH_VIEW: {
@@ -710,11 +713,13 @@ void DeferredRenderer::renderLights()
     //point lights
     mDeferredFBO.getTexture(0).bind(0); //bind color tex
     mDeferredFBO.getTexture(1).bind(1); //bind normal/depth tex
+    mDeferredFBO.getTexture(2).bind(2); //color tex
     
     DeferredResources::getSingleton().SHADER_LIGHT_POINT.bind(); //bind point light pixel shader
     DeferredResources::getSingleton().SHADER_LIGHT_POINT.uniform("projection_mat", mCam->getProjectionMatrix());
     DeferredResources::getSingleton().SHADER_LIGHT_POINT.uniform("sampler_col", 0);
     DeferredResources::getSingleton().SHADER_LIGHT_POINT.uniform("sampler_normal_depth", 1);
+    DeferredResources::getSingleton().SHADER_LIGHT_POINT.uniform("sampler_col_whole", 2);
     DeferredResources::getSingleton().SHADER_LIGHT_POINT.uniform("proj_inv_mat", mCam->getProjectionMatrix().inverted());
     DeferredResources::getSingleton().SHADER_LIGHT_POINT.uniform("view_height", mDeferredFBO.getHeight());
     DeferredResources::getSingleton().SHADER_LIGHT_POINT.uniform("view_width", mDeferredFBO.getWidth());
@@ -724,6 +729,7 @@ void DeferredRenderer::renderLights()
     DeferredResources::getSingleton().SHADER_LIGHT_SPOT.bind(); //bind point light pixel shader
     DeferredResources::getSingleton().SHADER_LIGHT_SPOT.uniform("sampler_col", 0);
     DeferredResources::getSingleton().SHADER_LIGHT_SPOT.uniform("sampler_normal_depth", 1);
+    DeferredResources::getSingleton().SHADER_LIGHT_SPOT.uniform("sampler_col_whole", 2);
     DeferredResources::getSingleton().SHADER_LIGHT_SPOT.uniform("proj_inv_mat", mCam->getProjectionMatrix().inverted());
     DeferredResources::getSingleton().SHADER_LIGHT_SPOT.uniform("view_height", (float)mDeferredFBO.getHeight());
     DeferredResources::getSingleton().SHADER_LIGHT_SPOT.uniform("view_width", (float)mDeferredFBO.getWidth());
@@ -732,6 +738,7 @@ void DeferredRenderer::renderLights()
     
     mDeferredFBO.getTexture(0).unbind(0); //bind color tex
     mDeferredFBO.getTexture(1).unbind(1); //bind normal/depth tex
+    mDeferredFBO.getTexture(2).unbind(2); //color tex
     
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
@@ -751,7 +758,7 @@ void DeferredRenderer::initFBOs()
     deferredFBO.enableDepthBuffer();
     deferredFBO.setDepthInternalFormat( GL_DEPTH_COMPONENT24 ); //want fbo to have precision depth map as well
     deferredFBO.setColorInternalFormat( GL_RGBA32F_ARB );
-    deferredFBO.enableColorBuffer( true, 2 ); // create an FBO with two color attachments (basic diffuse and normal/depth view, get position from depth)
+    deferredFBO.enableColorBuffer( true, 3 ); // create an FBO with two color attachments (basic diffuse and normal/depth view, get position from depth)
     
     if (mDeferFlags & MSAA_16X_ENABLED_FLAG) {
         deferredFBO.setSamples(16); //only deferred shader for now

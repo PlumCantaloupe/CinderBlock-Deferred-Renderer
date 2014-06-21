@@ -4,6 +4,7 @@ uniform vec3 light_pos_vs;
 uniform vec3 light_dir_vs;
 
 uniform sampler2D sampler_col;
+uniform sampler2D sampler_col_whole;
 uniform sampler2D sampler_normal_depth;
 
 uniform float view_height;
@@ -46,7 +47,7 @@ void main()
     
     //THREE.DeferredShaderChunk[ "unpackColorMap" ],
     vec4 colorMap = texture2D( sampler_col, texCoord );
-    vec3 albedo = float_to_vec3( abs( colorMap.x ) );
+    vec3 albedo = texture2D( sampler_col_whole, texCoord ).xyz; //float_to_vec3( abs( colorMap.x ) );
     vec3 specularColor = float_to_vec3( abs( colorMap.y ) );
     float shininess = abs( colorMap.z );
     //float wrapAround = sign( colorMap.z );

@@ -51,6 +51,7 @@ class DeferredResources {
     gl::GlslProg		SHADER_BASIC_TEXTURE;
     gl::GlslProg		SHADER_POINT_SHADOWS;
     gl::GlslProg		SHADER_SPOT_SHADOWS;
+    gl::GlslProg		SHADER_DIFFUSE;
 
     gl::VboMesh         VBO_FULLSCREEN_QUAD;
 
@@ -70,22 +71,18 @@ class DeferredResources {
         //shaders
         SHADER_DEFERRED         = gl::GlslProg( loadResource( RES_GLSL_DEFER_VERT ), loadResource( RES_GLSL_DEFER_FRAG ) );
         SHADER_BLENDER          = gl::GlslProg( loadResource( RES_GLSL_BASIC_BLENDER_VERT ), loadResource( RES_GLSL_BASIC_BLENDER_FRAG ) );
-        
         SHADER_SSAO             = gl::GlslProg( loadResource( RES_GLSL_SSAO_VERT ), loadResource( RES_GLSL_SSAO_FRAG ) );
-        
         SHADER_BLUR_X           = gl::GlslProg( loadResource( RES_GLSL_BLUR_H_VERT ), loadResource( RES_GLSL_BLUR_H_FRAG ) );
         SHADER_BLUR_Y           = gl::GlslProg( loadResource( RES_GLSL_BLUR_V_VERT ), loadResource( RES_GLSL_BLUR_V_FRAG ) );
-        
         SHADER_LIGHT_POINT      = gl::GlslProg( loadResource( RES_GLSL_LIGHT_POINT_VERT ), loadResource( RES_GLSL_LIGHT_POINT_FRAG ) );
         SHADER_LIGHT_SPOT       = gl::GlslProg( loadResource( RES_GLSL_LIGHT_SPOT_VERT ), loadResource( RES_GLSL_LIGHT_SPOT_FRAG ) );
         SHADER_ALPHA_TO_RBG     = gl::GlslProg( loadResource( RES_GLSL_ALPHA_RGB_VERT ), loadResource( RES_GLSL_ALPHA_RGB_FRAG ) );
-        
         SHADER_POINT_SHADOWS    = gl::GlslProg( loadResource( RES_GLSL_POINTSHADOW_VERT ), loadResource( RES_GLSL_POINTSHADOW_FRAG ) );
         SHADER_SPOT_SHADOWS     = gl::GlslProg( loadResource( RES_GLSL_SPOTSHADOW_VERT ), loadResource( RES_GLSL_SPOTSHADOW_FRAG ) );
         SHADER_DEPTH_WRITE      = gl::GlslProg( loadResource( RES_GLSL_DEPTHWRITE_VERT ), loadResource( RES_GLSL_DEPTHWRITE_FRAG ) );
         SHADER_BASIC_TEXTURE    = gl::GlslProg( loadResource( RES_GLSL_BASIC_VERT ), loadResource( RES_GLSL_BASIC_FRAG ) );
-        
         SHADER_FXAA             = gl::GlslProg( loadResource( RES_GLSL_FXAA_VERT ), loadResource( RES_GLSL_FXAA_FRAG ) );
+        SHADER_DIFFUSE          = gl::GlslProg( loadResource( RES_GLSL_DIFFUSE_VERT ), loadResource( RES_GLSL_DIFFUSE_FRAG ) );
         
         //mesh
         VBO_FULLSCREEN_QUAD     = DeferredModel::getFullScreenVboMesh();

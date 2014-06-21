@@ -131,17 +131,44 @@ class DeferredModel
     
 #pragma mark - static VBO primitive functions
     
+    static float normalizeCoordinatePart( float num, float max )
+    {
+        float normalizedNum = num / max;
+        normalizedNum = (normalizedNum - 0.5f) * 2.0f;
+        return normalizedNum;
+    }
+    
     static gl::VboMesh getFullScreenVboMesh()
+    {
+        //normalized device coordinates for full screen quad
+        return getScreenVboMesh( Rectf(-1.0f, -1.0f, 1.0f, 1.0f) );
+    }
+    
+    //the normalization stuff is basically a convenience to convert from screen coordinates (or a PSD file) to normalized device coordinates
+    static gl::VboMesh getScreenVboMesh( Rectf screenQuad, BOOL normalize = false, float nonNormalMax = 1.0f )
     {
         vector<uint32_t> indices;
         vector<Vec3f> normals;
         vector<Vec3f> positions;
         vector<Vec2f> texCoords;
         
-        positions.push_back( Vec3f(-1, -1, 0) );   //left top
-        positions.push_back( Vec3f(-1, 1, 0) );    //left bottom
-        positions.push_back( Vec3f(1, -1, 0) );    //right top
-        positions.push_back( Vec3f(1, 1, 0) );     //right bottom
+        if( normalize ) {
+            screenQuad.x1 = normalizeCoordinatePart( screenQuad.x1, nonNormalMax );
+            screenQuad.y1 = normalizeCoordinatePart( screenQuad.y1, nonNormalMax );
+            screenQuad.x2 = normalizeCoordinatePart( screenQuad.x2, nonNormalMax );
+            screenQuad.y2 = normalizeCoordinatePart( screenQuad.y2, nonNormalMax );
+        }
+        
+        //normalized device coordinates for full screen quad
+//        positions.push_back( Vec3f(-1, -1, 0) );   //left top
+//        positions.push_back( Vec3f(-1, 1, 0) );    //left bottom
+//        positions.push_back( Vec3f(1, -1, 0) );    //right top
+//        positions.push_back( Vec3f(1, 1, 0) );     //right bottom
+        
+        positions.push_back( Vec3f(screenQuad.getUpperLeft().x, screenQuad.getUpperLeft().y, 0) );   //left top
+        positions.push_back( Vec3f(screenQuad.getLowerLeft().x, screenQuad.getLowerLeft().y, 0) );    //left bottom
+        positions.push_back( Vec3f(screenQuad.getUpperRight().x, screenQuad.getUpperRight().y, 0) );    //right top
+        positions.push_back( Vec3f(screenQuad.getLowerRight().x, screenQuad.getLowerRight().y, 0) );     //right bottom
         
         normals.push_back( Vec3f(0,0,-1) );
         normals.push_back( Vec3f(0,0,-1) );

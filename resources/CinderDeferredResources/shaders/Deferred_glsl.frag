@@ -50,18 +50,21 @@ float vec3_to_float( vec3 data )
 void main()
 {
     vec4 finalDiffuse;
+    vec4 finalDiffuseWhole;
     vec4 finalNormalDepth;
     
     const float opacity = 1.0; //no transparency
     finalDiffuse = (vec4( diffuse, opacity ) * (1.0 - useDiffuseTex)) + (texture2D(texDiffuse, uv) * useDiffuseTex);
-
+    finalDiffuseWhole = finalDiffuse;
+    
     const float compressionScale = 0.999; //255.0/256.0;
     vec3 diffuseMapColor;
     diffuseMapColor = vec3( 1.0 );
 
     //diffuse color
-    finalDiffuse.x = vec3_to_float( compressionScale * finalDiffuse.xyz );
-
+    //finalDiffuse.x = vec3_to_float( compressionScale * finalDiffuse.xyz );
+    finalDiffuse.x = 1.0;
+    
     //specular color
     if ( additiveSpecular < 0.0 ) {
         finalDiffuse.y = vec3_to_float( compressionScale * specular );
@@ -79,4 +82,5 @@ void main()
     
     gl_FragData[0] = finalDiffuse;
     gl_FragData[1] = finalNormalDepth;
+    gl_FragData[2] = finalDiffuseWhole;
 }
