@@ -17,6 +17,8 @@ Projects using this engine
 <img src="http://farm8.staticflickr.com/7312/12617617555_267da67848_c.jpg" />
 "Space-man Marionette"
 
+<hr />
+
 Deferred rendering + shadow-mapping uses a huge amount if VRAM (one of its disadvantages); but its advantages can be a large amount of dynamic point lights possible.
 
 Tips to get better framerates:
