@@ -6,10 +6,10 @@ Drag this into your blocks folder within your Cinder directory (0.8.5, possibly 
 Included "Advanced" Template
 <img src="http://farm9.staticflickr.com/8363/8402994769_16588ca60f_c.jpg" />
 <img src="http://farm9.staticflickr.com/8216/8406568340_3099ee04f3_c.jpg" />
-<br />
+<hr />
 Included "Basic" Template
 <img src="http://farm8.staticflickr.com/7451/12713642585_8704c8131a_c.jpg" />
-<br />
+<hr />
 Projects using this engine
 <img src="https://farm8.staticflickr.com/7534/16247456152_977dd31604_c.jpg" />
 "Pedestal"
