@@ -11,8 +11,11 @@ Included "Basic" Template
 <img src="http://farm8.staticflickr.com/7451/12713642585_8704c8131a_c.jpg" />
 <br />
 Projects using this engine
-<img src="http://farm4.staticflickr.com/3721/12744449393_5d60b6139a_c.jpg" />
+<img src="https://farm8.staticflickr.com/7534/16247456152_977dd31604_c.jpg" />
+"Pedestal"
+
 <img src="http://farm8.staticflickr.com/7312/12617617555_267da67848_c.jpg" />
+"Space-man Marionette"
 
 Deferred rendering + shadow-mapping uses a huge amount if VRAM (one of its disadvantages); but its advantages can be a large amount of dynamic point lights possible.
 
