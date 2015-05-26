@@ -30,6 +30,7 @@
 
 #include "Lights.h"
 #include "DeferredModel.h"
+#include "DeferredConstants.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -135,19 +136,6 @@ public:
     gl::VboMesh         mConeVBOMesh;    //pass cube Vbo to all spot lights to save on draw calls
     gl::VboMesh         mSphereVBOMesh;
     
-    enum
-    {
-        SHOW_FINAL_VIEW,
-        SHOW_DIFFUSE_VIEW,
-        SHOW_NORMALMAP_VIEW,
-        SHOW_DEPTH_VIEW,
-        SHOW_SSAO_VIEW,
-        SHOW_SSAO_BLURRED_VIEW,
-        SHOW_LIGHT_VIEW,
-        SHOW_SHADOWS_VIEW,
-        NUM_RENDER_VIEWS
-    };
-    
 protected:
     int mDeferFlags;
     
@@ -185,7 +173,7 @@ public:
     
     Light_Point* addPointLight(const Vec3f position, const Color color, const float intensity, const bool castsShadows, const bool visible = false);
     Light_Spot* addSpotLight(const Vec3f position, const Vec3f target, const Color color, const float intensity, const float lightAngle, const bool castsShadows, const bool visible);
-    DeferredModel* addModel( gl::VboMesh& VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster, const Matrix44f modelMatrix = Matrix44f::identity() );
+    DeferredModel* addModel( gl::VboMesh * VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster, const int tag = -1, const Matrix44f modelMatrix = Matrix44f::identity() );
     void addModel( DeferredModel *model );
     
     //todo .. add remove functionality (using procedurally unique ids)

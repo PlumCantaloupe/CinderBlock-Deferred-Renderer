@@ -4,6 +4,16 @@
  *
  *  Created by Anthony Scavarelli on 2014/27/05.
  *
+ 
+ Matrix44f
+ 
+ 0   1   2   3
+ 4   5   6   7
+ 8   9   10  11
+ 12  13  14  15
+ 
+ 
+ 
  */
 
 #pragma once
@@ -25,11 +35,13 @@ using namespace std;
 class DeferredModel
 {
     public:
-    DeferredMaterial material; //can use textures to replace these properties
+    DeferredMaterial material;      //can use textures to replace these properties
     BOOL _isShadowCaster;
     
-    gl::VboMesh mVBOMeshRef;   //keeping as pointer so VBO's can be shared if many similar instances
-    Matrix44f   mModelMatrix;   //in trying to be forward thinking we will think in terms of matrices not pos, scale, rotation. Use glMultMatrixf( mModelMatrix ) if you must use immediate mode
+    gl::VboMesh * mVBOMeshRef;      //keeping as pointer so VBO's can be shared if many similar instances
+    Matrix44f   mModelMatrix;       //in trying to be forward thinking we will think in terms of matrices not pos, scale, rotation. Use glMultMatrixf( mModelMatrix ) if you must use immediate mode
+    
+    int tag;                        //user maintanable id that can be used to determine which object we are dealong with ... i.e. a unity TAG
     
     //these textures are optional but if set will overwrite any corresponding material options
     protected:
@@ -51,7 +63,7 @@ class DeferredModel
         normalTex = NULL;
     }
     
-    virtual void setup( gl::VboMesh VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster = true, const Matrix44f modelMatrix = Matrix44f::identity() )
+    virtual void setup( gl::VboMesh * VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster = true, const Matrix44f modelMatrix = Matrix44f::identity() )
     {
         mVBOMeshRef = VBOMeshRef;
         material = mat;
@@ -67,8 +79,8 @@ class DeferredModel
     void setPos( const Vec3f pos )
     {
         mModelMatrix[12] = pos.x;
-        mModelMatrix[12] = pos.y;
-        mModelMatrix[12] = pos.z;
+        mModelMatrix[13] = pos.y;
+        mModelMatrix[14] = pos.z;
     }
     
     Vec3f getPos() const
@@ -100,7 +112,7 @@ class DeferredModel
     
     virtual void render()
     {
-        gl::draw( mVBOMeshRef );
+        gl::draw( *mVBOMeshRef );
     }
     
     virtual void setDiffuseTex( gl::Texture *tex ) {diffuseTex = tex;}

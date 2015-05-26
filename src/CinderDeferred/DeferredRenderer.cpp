@@ -91,10 +91,11 @@ Light_Spot* DeferredRenderer::addSpotLight(const Vec3f position, const Vec3f tar
     return newLightP;
 }
 
-DeferredModel* DeferredRenderer::addModel( gl::VboMesh& VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster, const Matrix44f modelMatrix  )
+DeferredModel* DeferredRenderer::addModel( gl::VboMesh * VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster, const int tag, const Matrix44f modelMatrix )
 {
     DeferredModel *model = new DeferredModel();
     model->setup( VBOMeshRef, mat, isShadowsCaster, modelMatrix );
+    model->tag = tag;
     mModels.push_back( model );
     return model;
 }
@@ -415,7 +416,7 @@ void DeferredRenderer::renderQuad( const int renderType, Rectf renderQuad, const
     
     switch (renderType)
     {
-        case SHOW_FINAL_VIEW: {
+        case DeferredConstants::SHOW_FINAL_VIEW: {
             
             if( mDeferFlags & SSAO_ENABLED_FLAG ) {
                 pingPongBlurSSAO();
@@ -544,7 +545,7 @@ void DeferredRenderer::renderQuad( const int renderType, Rectf renderQuad, const
             mFinalSSFBO.getTexture().unbind(0);
         }
             break;
-        case SHOW_DIFFUSE_VIEW: {
+        case DeferredConstants::SHOW_DIFFUSE_VIEW: {
             gl::setViewport( getWindowBounds() );
             gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
             mDeferredFBO.getTexture(2).bind(0);
@@ -555,7 +556,7 @@ void DeferredRenderer::renderQuad( const int renderType, Rectf renderQuad, const
             mDeferredFBO.getTexture(2).unbind(0);
         }
             break;
-        case SHOW_DEPTH_VIEW: {
+        case DeferredConstants::SHOW_DEPTH_VIEW: {
             gl::setViewport( getWindowBounds() );
             gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
             mDeferredFBO.getTexture(1).bind(0);
@@ -566,7 +567,7 @@ void DeferredRenderer::renderQuad( const int renderType, Rectf renderQuad, const
             mDeferredFBO.getTexture(1).unbind(0);
         }
             break;
-        case SHOW_NORMALMAP_VIEW: {
+        case DeferredConstants::SHOW_NORMALMAP_VIEW: {
             gl::setViewport( getWindowBounds() );
             gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
             mDeferredFBO.getTexture(1).bind(0);
@@ -574,7 +575,7 @@ void DeferredRenderer::renderQuad( const int renderType, Rectf renderQuad, const
             mDeferredFBO.getTexture(1).unbind(0);
         }
             break;
-        case SHOW_SSAO_VIEW: {
+        case DeferredConstants::SHOW_SSAO_VIEW: {
             if( mDeferFlags & SSAO_ENABLED_FLAG ) {
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
@@ -592,7 +593,7 @@ void DeferredRenderer::renderQuad( const int renderType, Rectf renderQuad, const
             }
         }
             break;
-        case SHOW_SSAO_BLURRED_VIEW: {
+        case DeferredConstants::SHOW_SSAO_BLURRED_VIEW: {
             if( mDeferFlags & SSAO_ENABLED_FLAG ) {
                 pingPongBlurSSAO();
                 
@@ -604,7 +605,7 @@ void DeferredRenderer::renderQuad( const int renderType, Rectf renderQuad, const
             }
         }
             break;
-        case SHOW_LIGHT_VIEW: {
+        case DeferredConstants::SHOW_LIGHT_VIEW: {
             gl::setViewport( getWindowBounds() );
             gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
             mLightGlowFBO.getTexture().bind(0);
@@ -612,7 +613,7 @@ void DeferredRenderer::renderQuad( const int renderType, Rectf renderQuad, const
             mLightGlowFBO.getTexture().unbind(0);
         }
             break;
-        case SHOW_SHADOWS_VIEW: {
+        case DeferredConstants::SHOW_SHADOWS_VIEW: {
             if ( mDeferFlags & SHADOWS_ENABLED_FLAG ) {
                 gl::setViewport( getWindowBounds() );
                 gl::setMatricesWindow( getWindowSize() ); //want textures to fill screen
