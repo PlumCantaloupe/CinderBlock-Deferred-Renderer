@@ -37,14 +37,16 @@ class DeferredModel
     public:
     DeferredMaterial material;      //can use textures to replace these properties
     BOOL _isShadowCaster;
-    
     gl::VboMesh * mVBOMeshRef;      //keeping as pointer so VBO's can be shared if many similar instances
-    Matrix44f   mModelMatrix;       //in trying to be forward thinking we will think in terms of matrices not pos, scale, rotation. Use glMultMatrixf( mModelMatrix ) if you must use immediate mode
     
     int tag;                        //user maintanable id that can be used to determine which object we are dealong with ... i.e. a unity TAG
     
     //these textures are optional but if set will overwrite any corresponding material options
     protected:
+    Vec3f       mPosition;
+    Vec3f       mScale;
+    Quatf       mRotation;          //saving rotation as it appears to be tricky to separate on its own
+    
     gl::Texture *diffuseTex;
     gl::Texture *specularTex;
     gl::Texture *emissiveTex;
@@ -63,51 +65,67 @@ class DeferredModel
         normalTex = NULL;
     }
     
-    virtual void setup( gl::VboMesh * VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster = true, const Matrix44f modelMatrix = Matrix44f::identity() )
+    virtual void setup( gl::VboMesh * VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster = true, const Vec3f position = Vec3f(0.0f, 0.0f, 0.0f), const Vec3f scale = Vec3f(1.0f, 1.0f, 1.0f), const Quatf rotation = Quatf::identity() )
     {
-        mVBOMeshRef = VBOMeshRef;
-        material = mat;
+        mVBOMeshRef     = VBOMeshRef;
+        material        = mat;
         _isShadowCaster = isShadowsCaster;
-        mModelMatrix = modelMatrix;
+        
+        mPosition       = position;
+        mScale          = scale;
+        mRotation       = rotation;
+        
+        mRotation       = Quatf::identity();
     }
     
-    Matrix44f& getModelMatrix()
+    const Matrix44f getModelMatrix()
     {
-        return mModelMatrix;
+        Matrix44f   modelMatrix = Matrix44f::identity();
+        
+        //set translation
+        modelMatrix[12] = mPosition.x;
+        modelMatrix[13] = mPosition.y;
+        modelMatrix[14] = mPosition.z;
+        
+        //set scaling
+        modelMatrix[0] = mScale.x;
+        modelMatrix[5] = mScale.y;
+        modelMatrix[10] = mScale.z;
+        
+        //now multiply rotation last
+        modelMatrix *= mRotation.toMatrix44();
+        
+        return modelMatrix;
     }
     
     void setPos( const Vec3f pos )
     {
-        mModelMatrix[12] = pos.x;
-        mModelMatrix[13] = pos.y;
-        mModelMatrix[14] = pos.z;
+        mPosition.set( pos.x, pos.y, pos.z );
     }
     
-    Vec3f getPos() const
+    const Vec3f getPos() const
     {
-        return Vec3f(mModelMatrix[12], mModelMatrix[13], mModelMatrix[14]);
+        return mPosition;
     }
     
     void setRotation( const Quatf rotation )
     {
-        //TODO
+        mRotation = rotation;
     }
     
-    Quatf getRotation() const
+    const Quatf getRotation() const
     {
-        return Quatf();
+        return mRotation;
     }
     
     void setScale( const Vec3f scale )
     {
-        mModelMatrix[0] = scale.x;
-        mModelMatrix[5] = scale.y;
-        mModelMatrix[10] = scale.z;
+        mScale.set( scale.x, scale.y, scale.z );
     }
     
-    Vec3f getScale() const
+    const Vec3f getScale() const
     {
-        return Vec3f();
+        return mScale;
     }
     
     virtual void render()

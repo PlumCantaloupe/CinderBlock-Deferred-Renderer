@@ -8,6 +8,27 @@
 
 #include "DeferredRenderer.h"
 
+DeferredRenderer::DeferredRenderer()
+{}
+
+DeferredRenderer::~DeferredRenderer()
+{
+    for ( int i = 0; i < mPointLights.size(); i++ ) {
+        delete mPointLights.at(i);
+        mPointLights.at(i) = NULL;
+    }
+    
+    for ( int i = 0; i < mSpotLights.size(); i++ ) {
+        delete mSpotLights.at(i);
+        mSpotLights.at(i) = NULL;
+    }
+    
+    for ( int i = 0; i < mModels.size(); i++ ) {
+        delete mModels.at(i);
+        mModels.at(i) = NULL;
+    }
+}
+
 vector<Light_Point*>* DeferredRenderer::getPointLightsRef(){
     return &mPointLights;
 };
@@ -91,10 +112,10 @@ Light_Spot* DeferredRenderer::addSpotLight(const Vec3f position, const Vec3f tar
     return newLightP;
 }
 
-DeferredModel* DeferredRenderer::addModel( gl::VboMesh * VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster, const int tag, const Matrix44f modelMatrix )
+DeferredModel* DeferredRenderer::addModel( gl::VboMesh * VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster, const int tag, const Vec3f position, const Vec3f scale, const Quatf rotation )
 {
     DeferredModel *model = new DeferredModel();
-    model->setup( VBOMeshRef, mat, isShadowsCaster, modelMatrix );
+    model->setup( VBOMeshRef, mat, isShadowsCaster, position, scale, rotation );
     model->tag = tag;
     mModels.push_back( model );
     return model;
