@@ -112,7 +112,7 @@ Light_Spot* DeferredRenderer::addSpotLight(const Vec3f position, const Vec3f tar
     return newLightP;
 }
 
-DeferredModel* DeferredRenderer::addModel( gl::VboMesh * VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster, const int tag, const Vec3f position, const Vec3f scale, const Quatf rotation )
+DeferredModel* DeferredRenderer::addModel( gl::VboMesh * VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster, const int tag, const Vec3f position, const Vec3f scale, const Vec3f rotation )
 {
     DeferredModel *model = new DeferredModel();
     model->setup( VBOMeshRef, mat, isShadowsCaster, position, scale, rotation );

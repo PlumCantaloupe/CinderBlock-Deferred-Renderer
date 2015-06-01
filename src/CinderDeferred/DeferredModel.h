@@ -45,7 +45,7 @@ class DeferredModel
     protected:
     Vec3f       mPosition;
     Vec3f       mScale;
-    Quatf       mRotation;          //saving rotation as it appears to be tricky to separate on its own
+    Vec3f       mRotation;          //saving rotation as it appears to be tricky to separate on its own
     
     gl::Texture *diffuseTex;
     gl::Texture *specularTex;
@@ -65,7 +65,7 @@ class DeferredModel
         normalTex = NULL;
     }
     
-    virtual void setup( gl::VboMesh * VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster = true, const Vec3f position = Vec3f(0.0f, 0.0f, 0.0f), const Vec3f scale = Vec3f(1.0f, 1.0f, 1.0f), const Quatf rotation = Quatf::identity() )
+    virtual void setup( gl::VboMesh * VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster = true, const Vec3f position = Vec3f(0.0f, 0.0f, 0.0f), const Vec3f scale = Vec3f(1.0f, 1.0f, 1.0f), const Vec3f rotation = Vec3f(0.0f, 0.0f, 0.0f) )
     {
         mVBOMeshRef     = VBOMeshRef;
         material        = mat;
@@ -74,8 +74,17 @@ class DeferredModel
         mPosition       = position;
         mScale          = scale;
         mRotation       = rotation;
+    }
+    
+    //set up model somewhere else independently
+    virtual void setup( const DeferredMaterial mat, const BOOL isShadowsCaster = true, const Vec3f position = Vec3f(0.0f, 0.0f, 0.0f), const Vec3f scale = Vec3f(1.0f, 1.0f, 1.0f), const Vec3f rotation = Vec3f(0.0f, 0.0f, 0.0f) )
+    {
+        material        = mat;
+        _isShadowCaster = isShadowsCaster;
         
-        mRotation       = Quatf::identity();
+        mPosition       = position;
+        mScale          = scale;
+        mRotation       = rotation;
     }
     
     const Matrix44f getModelMatrix()
@@ -92,8 +101,8 @@ class DeferredModel
         modelMatrix[5] = mScale.y;
         modelMatrix[10] = mScale.z;
         
-        //now multiply rotation last
-        modelMatrix *= mRotation.toMatrix44();
+        //add rotation
+//        modelMatrix.rotate( mRotation );
         
         return modelMatrix;
     }
@@ -108,12 +117,12 @@ class DeferredModel
         return mPosition;
     }
     
-    void setRotation( const Quatf rotation )
+    void setRotation( const Vec3f rotation )
     {
         mRotation = rotation;
     }
     
-    const Quatf getRotation() const
+    const Vec3f getRotation() const
     {
         return mRotation;
     }
@@ -244,15 +253,15 @@ class DeferredModel
         vector<Vec3f> positions;
         vector<Vec2f> texCoords;
         
-        positions.push_back( c + Vec3f(-size/2, 0, -size/2) );  //left top
-        positions.push_back( c + Vec3f(-size/2, 0, size/2) );   //left bottom
-        positions.push_back( c + Vec3f(size/2, 0, -size/2) );   //right top
-        positions.push_back( c + Vec3f(size/2, 0, size/2) );    //right bottom
+        positions.push_back( c + Vec3f(-size/2,-size/2, 0) );  //left top
+        positions.push_back( c + Vec3f(-size/2, size/2, 0) );   //left bottom
+        positions.push_back( c + Vec3f(size/2, -size/2, 0) );   //right top
+        positions.push_back( c + Vec3f(size/2, size/2, 0) );    //right bottom
         
-        normals.push_back( Vec3f(0,1,0) );
-        normals.push_back( Vec3f(0,1,0) );
-        normals.push_back( Vec3f(0,1,0) );
-        normals.push_back( Vec3f(0,1,0) );
+        normals.push_back( Vec3f(0,0,1) );
+        normals.push_back( Vec3f(0,0,1) );
+        normals.push_back( Vec3f(0,0,1) );
+        normals.push_back( Vec3f(0,0,1) );
         
         indices.push_back( 0 );
         indices.push_back( 1 );

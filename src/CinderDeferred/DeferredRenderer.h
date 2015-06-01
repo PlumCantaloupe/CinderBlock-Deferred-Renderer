@@ -176,7 +176,7 @@ public:
     
     Light_Point* addPointLight(const Vec3f position, const Color color, const float intensity, const bool castsShadows, const bool visible = false);
     Light_Spot* addSpotLight(const Vec3f position, const Vec3f target, const Color color, const float intensity, const float lightAngle, const bool castsShadows, const bool visible);
-    DeferredModel* addModel( gl::VboMesh * VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster, const int tag = -1, const Vec3f position = Vec3f(0.0f, 0.0f, 0.0f), const Vec3f scale = Vec3f(1.0f, 1.0f, 1.0f), const Quatf rotation = Quatf::identity() );
+    DeferredModel* addModel( gl::VboMesh * VBOMeshRef, const DeferredMaterial mat, const BOOL isShadowsCaster, const int tag = -1, const Vec3f position = Vec3f(0.0f, 0.0f, 0.0f), const Vec3f scale = Vec3f(1.0f, 1.0f, 1.0f), const Vec3f rotation = Vec3f(0.0f, 0.0f, 0.0f) );
     void addModel( DeferredModel *model );
     
     //todo .. add remove functionality (using procedurally unique ids)
